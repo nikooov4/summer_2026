@@ -1,0 +1,91 @@
+@page "/statements/view"
+@using LMSDashboardBlazor.Services.Statements
+@implements IDisposable
+@inject StatementService StatementService
+
+<section class="welcome-section statements-compact-hero">
+    <div class="welcome-content statements-hero-content">
+        <div>
+            <p class="statements-eyebrow">Просмотр ведомости</p>
+            <h1>Ведомость: @(CurrentStatement?.Name ?? "нет данных")</h1>
+            <p class="welcome-text">Итоговая таблица показывает разделы, экзамен, сумму, оценку, код и ECTS.</p>
+        </div>
+        <a class="statement-action-link" href="/statements/constructor">Открыть конструктор</a>
+    </div>
+</section>
+
+<section class="dashboard-card statement-table-card">
+    <div class="card-header">
+        <h2><i class="fas fa-clipboard-list"></i> Итоговая ведомость</h2>
+    </div>
+
+    <div class="card-content">
+        @if (CurrentStatement is null || CurrentStatement.Students.Count == 0)
+        {
+            <div class="statement-empty-state">
+                <i class="fas fa-file-circle-question"></i>
+                <p>Нет данных для отображения. Создайте ведомость в конструкторе.</p>
+                <a class="statement-inline-link" href="/statements/constructor">Создать ведомость</a>
+            </div>
+        }
+        else
+        {
+            <div class="statement-table-wrap">
+                <table class="statement-table">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            @foreach (var subject in CurrentStatement.Subjects)
+                            {
+                                <th>@subject</th>
+                            }
+                            <th>Экзамен</th>
+                            <th>Сумма</th>
+                            <th>Оценка</th>
+                            <th>Код</th>
+                            <th>ECTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in CurrentStatement.Students)
+                        {
+                            <tr>
+                                <td class="statement-name-cell">@student.FullName</td>
+                                @foreach (var score in student.Sections)
+                                {
+                                    <td>@score</td>
+                                }
+                                <td>@student.Exam</td>
+                                <td>@student.Total</td>
+                                <td>@student.Mark</td>
+                                <td>@student.Code</td>
+                                <td>@student.ECTS</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private StatementModel? CurrentStatement;
+
+    protected override void OnInitialized()
+    {
+        StatementService.OnStatementChanged += UpdateStatement;
+        UpdateStatement();
+    }
+
+    private void UpdateStatement()
+    {
+        CurrentStatement = StatementService.CurrentStatement;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StatementService.OnStatementChanged -= UpdateStatement;
+    }
+}

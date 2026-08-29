@@ -1,0 +1,22 @@
+﻿
+<MudExpansionPanels>
+    @foreach(var item in Items)
+    {
+        <MudExpansionPanel Text="@item.CourseName">
+            <CourseInstancesTable CourseInstances="@item.CourseInstances" />
+        </MudExpansionPanel>
+    }
+</MudExpansionPanels>
+
+@code {
+    private bool _hidePosition;
+    private bool _loading;
+    private IEnumerable<Course> Items = new List<Course>
+    {
+        Mock.FakeCourse("Семантически безопасное информационное моделирование"),
+        Mock.FakeCourse("Организация и поиск данных"),
+
+    };
+
+
+}

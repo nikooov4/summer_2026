@@ -1,0 +1,152 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+<MudDialog>
+    <TitleContent>
+        Создать ведомость
+    </TitleContent>
+    
+    <DialogContent>
+
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Style="box-shadow: none;">
+                <MudCardContent Class="d-flex flex-column gap-3">
+                    <MudTextField Label="Название" Required="true" @bind-Value="model.Name" For="@(() => model.Name)" />
+                    <MudTextField Label="Описание" Required="true" @bind-Value="model.Description" For="@(() => model.Description)" />
+                    <MudNumericField Label="Год" Required="true" @bind-Value="model.Year" For="@(() => model.Year)" Min="1900" Max="2024" />
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                        
+                        @foreach (var column in model.AppraisalListColumns)
+                        {
+                            <MudPaper Class="d-flex flex-column gap-3 pa-3" Style="min-width: 300px;" Elevation="2">
+                                <MudTextField Label="Название" @bind-Value="column.Name" For="@(() => column.Name)"/>
+                                <MudNumericField Label="Минимальный проходной балл" @bind-Value="column.MinAcceptScore" For="@(() => column.MinAcceptScore)" Min="0" />
+                                <MudNumericField Label="Максимальное значение" @bind-Value="column.MaxScore" For="@(() => column.MaxScore)" Min="0" />
+                                <MudNumericField Label="Порядковый индекс" @bind-Value="column.OrderIndex" For="@(() => column.OrderIndex)" Min="0" />
+
+                                <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => model.AppraisalListColumns.Remove(column)">Удалить</MudButton>
+                            </MudPaper>
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Class="rounded-0" OnClick="() => 
+                            {
+
+                                var column = new AppraisalListColumn{ Id = Guid.NewGuid(), MaxScore = 30, MinAcceptScore = 18 };
+                                column.AppraisalListMarks = Mock.FakeMarks(column);
+                                model.AppraisalListColumns.Add(column);
+
+                            }" aria-label="Добавить столбец"></MudIconButton>
+                        </MudStack>
+                    <MudText Color="@Color.Error">
+                        <ValidationSummary />
+                    </MudText>
+                        
+                </MudCardContent>
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Создать</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+
+    </DialogContent>
+    
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public CourseInstance CourseInstance { get; set; }
+
+    bool success;
+    string[] errors = { };
+    MudForm form;
+
+    AddAppraisalForm model = new AddAppraisalForm();
+
+    public class AddAppraisalForm
+    {
+        public AddAppraisalForm()
+        {
+            Id = Guid.NewGuid();
+            Year = 2022;
+            AppraisalListColumns = new List<AppraisalListColumn>();
+        }
+
+        public Guid Id { get; set; }
+
+        [Required(ErrorMessage = "Поле должно быть заполнено.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "Поле должно быть заполнено.")]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage = "Поле должно быть заполнено.")]
+        [Range(1900, 2024, ErrorMessage = "Год должен быть от 1900 до 2024.")]
+        public int Year { get; set; }
+
+        [CustomValidation(typeof(AddAppraisalForm), "ValidateAppraisalListColumns")]
+        public List<AppraisalListColumn> AppraisalListColumns { get; set; }
+
+        public static ValidationResult ValidateAppraisalListColumns(List<AppraisalListColumn> appraisalListColumns, ValidationContext validationContext)
+        {
+            if (appraisalListColumns == null || appraisalListColumns.Count == 0)
+            {
+                return new ValidationResult("Должен быть задан хотя бы один столбец ведомости.");
+            }
+
+
+            for (int i = 0; i < appraisalListColumns.Count; i++)
+            {
+                var column = appraisalListColumns[i];
+
+                if (string.IsNullOrEmpty(column.Name))
+                {
+                    return new ValidationResult("Название должно быть заполнено для каждого столбца ведомости.");
+                }
+                if (column.MaxScore < 0)
+                {
+                    return new ValidationResult("Максимальный балл должен быть больше нуля.");
+                }
+                if (column.MinAcceptScore < 0)
+                {
+                    return new ValidationResult("Минимальный проходной балл должен быть больше нуля.");
+                }
+                if (column.MaxScore < column.MinAcceptScore)
+                {
+                    return new ValidationResult("Минимальный проходной балл не может быть больше максимально возможного.");
+                }
+                if (column.OrderIndex < 0)
+                {
+                    return new ValidationResult("Порядковый индекс не может быть меньше нуля.");
+                }
+
+                for (int j = i + 1; j < appraisalListColumns.Count; j++)
+                {
+                    var otherColumn = appraisalListColumns[j];
+                    if (column.OrderIndex == otherColumn.OrderIndex)
+                    {
+                        return new ValidationResult("Порядковый индекс не может быть повторен.");
+                    }
+                }
+            }
+
+
+
+            return ValidationResult.Success;
+        }
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        var list = new AppraisalList { Id = model.Id, AppraisalListColumns = model.AppraisalListColumns, Name = model.Name, Description = model.Description, Year = model.Year, DateCreated = DateTime.Now };
+        Mock.FakeAppraisalListResults.Add(list);
+        CourseInstance.AppraisalLists.Add(list);
+        success = true;
+        MudDialog.Close(DialogResult.Ok(true));
+        StateHasChanged();
+    }
+
+}

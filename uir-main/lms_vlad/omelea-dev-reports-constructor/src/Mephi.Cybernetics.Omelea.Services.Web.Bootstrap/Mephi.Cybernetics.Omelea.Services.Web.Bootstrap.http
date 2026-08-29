@@ -1,0 +1,6 @@
+@Mephi.Cybernetics.Omelea.Services.Web.Bootstrap_HostAddress = http://localhost:5138
+
+GET {{Mephi.Cybernetics.Omelea.Services.Web.Bootstrap_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

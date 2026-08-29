@@ -1,0 +1,165 @@
+SLIDES=16
+--- SLIDE 1 ---
+Title 2: Создание клиентского модуля мониторинга посещаемости учебных занятий
+--- SLIDE 2 ---
+Title 1: Реферат
+Заголовок 1: Реферат
+Slide Number Placeholder 3: 2
+TextBox 5: Пояснительная записка содержит 36 страниц без листов задания. В работе представлены результаты анализа, проектирования и реализации клиентского модуля мониторинга посещаемости учебных занятий.
+TextBox 6: Характеристики работы
+TextBox 7: Количество страниц
+TextBox 8: 36
+TextBox 10: Количество рисунков
+TextBox 11: 9
+TextBox 13: Количество таблиц
+TextBox 14: 16
+TextBox 16: Количество источников
+TextBox 17: 20
+TextBox 19: Количество разделов
+TextBox 20: 4
+TextBox 22: Количество приложений
+TextBox 23: 2
+TextBox 25: Файлов проекта
+TextBox 26: 18
+TextBox 28: Строк исходного кода
+TextBox 29: 9 247
+TextBox 31: Структура | работы
+TextBox 32: 1.
+TextBox 33: анализ требований | и сценариев;
+TextBox 34: 2.
+TextBox 35: предметная модель | и правила отметок;
+TextBox 36: 3.
+TextBox 37: архитектура и | локальное хранение;
+TextBox 38: 4.
+TextBox 39: реализация, проверка | и развитие.
+TextBox 40: Ключевые слова
+TextBox 41: BLAZOR; RAZOR-КОМПОНЕНТЫ; JSON; ЭЛЕКТРОННЫЙ ЖУРНАЛ; МОНИТОРИНГ; АДАПТИВНЫЙ ИНТЕРФЕЙС.
+--- SLIDE 3 ---
+Title 1: Актуальность
+Slide Number Placeholder 3: 3
+Rounded Rectangle 4: Ручные | отметки
+Rounded Rectangle 6: Незаполненные | журналы
+Rounded Rectangle 8: Нет общей | картины
+Rounded Rectangle 10: Поздняя | реакция
+Rounded Rectangle 11: Требуется отдельный экран мониторинга: полнота журналов, посещаемость, журналы риска, переход к записи
+Rounded Rectangle 12: Журнал
+Rounded Rectangle 13: История студента
+Rounded Rectangle 14: Мониторинг
+Rounded Rectangle 15: JSON
+--- SLIDE 4 ---
+Title 1: Цель и границы работы
+Slide Number Placeholder 3: 4
+Rounded Rectangle 4: Прототип клиентского модуля мониторинга посещаемости
+Rounded Rectangle 6: Журнал | преподавателя
+Rounded Rectangle 8: История | студента
+Rounded Rectangle 10: Мониторинг | за период
+Rounded Rectangle 11: Реализовано | в Blazor
+Rounded Rectangle 12: Данные | в JSON
+Rounded Rectangle 13: REST API | на будущее
+Rounded Rectangle 14: Не реализовывались: база данных, авторизация, реальные роли
+--- SLIDE 5 ---
+Title 1: Сценарии пользователей
+Slide Number Placeholder 3: 5
+Rounded Rectangle 4: Преподаватель
+Rounded Rectangle 5: Выбор занятия
+Rounded Rectangle 7: Отметки
+Rounded Rectangle 9: Сохранение
+Rounded Rectangle 11: Завершение
+Rounded Rectangle 12: Студент | (демо)
+Rounded Rectangle 13: Выбор студента
+Rounded Rectangle 15: История
+Rounded Rectangle 17: Проценты
+Rounded Rectangle 19: Детали
+Rounded Rectangle 20: Мониторинг
+Rounded Rectangle 21: Период
+Rounded Rectangle 23: Полнота
+Rounded Rectangle 25: Журналы риска
+Rounded Rectangle 27: Переход
+Rounded Rectangle 28: Общие модели и локальное хранилище связывают журнал, историю и мониторинг
+--- SLIDE 6 ---
+Title 1: Функции прототипа
+Slide Number Placeholder 3: 6
+Rounded Rectangle 4: Рабочее пространство посещаемости
+Rounded Rectangle 5: Выбор занятия | и контекста
+Rounded Rectangle 7: Отметки | и валидация
+Rounded Rectangle 9: Поиск, фильтр, | сортировка
+Rounded Rectangle 11: История | студента
+Rounded Rectangle 13: Показатели | занятия
+Rounded Rectangle 15: Мониторинг | периода
+Rounded Rectangle 17: Массовая отметка • сохранение • отмена • завершение/возобновление
+--- SLIDE 7 ---
+Title 1: Предметная модель
+Slide Number Placeholder 3: 7
+Rounded Rectangle 5: Локальный JSON
+Rounded Rectangle 6: Students
+Rounded Rectangle 8: Lessons
+Rounded Rectangle 10: Entries
+Rounded Rectangle 12: Summary
+--- SLIDE 8 ---
+Title 1: Архитектура прототипа
+Slide Number Placeholder 3: 8
+Rounded Rectangle 4: Razor-страницы
+Rounded Rectangle 5: Attendance.razor, Monitoring.razor, Home.razor
+Rounded Rectangle 7: Сценарии
+Rounded Rectangle 8: AttendanceWorkspace, ConceptWorkspace
+Rounded Rectangle 10: Модели
+Rounded Rectangle 11: AttendanceModels, ConceptEditorModels
+Rounded Rectangle 13: Хранилище
+Rounded Rectangle 14: App_Data/attendance-data.json
+Rounded Rectangle 16: Дальнейшее развитие
+Rounded Rectangle 17: REST API, авторизация, БД
+Rounded Rectangle 18: Практическая реализация не зависит от внешнего сервера
+--- SLIDE 9 ---
+Title 1: Журнал посещаемости
+Slide Number Placeholder 3: 9
+Rounded Rectangle 5: Выбор занятия
+Rounded Rectangle 6: Сводные счетчики
+Rounded Rectangle 7: Поиск и фильтр
+Rounded Rectangle 8: Статус + комментарий
+Rounded Rectangle 9: Сохранить / отменить
+Rounded Rectangle 10: Неотмеченные блокируют завершение
+--- SLIDE 10 ---
+Title 1: Режим истории студента
+Slide Number Placeholder 3: 10
+Rounded Rectangle 5: Выбор студента
+Rounded Rectangle 7: Процент посещаемости
+Rounded Rectangle 9: История по занятиям
+--- SLIDE 11 ---
+Title 1: Мониторинг посещаемости
+Slide Number Placeholder 3: 11
+Rounded Rectangle 5: Выбор периода
+Rounded Rectangle 5: Журналы
+--- SLIDE 12 ---
+Title 1: Локальное сохранение
+Slide Number Placeholder 3: 12
+Rounded Rectangle 5: Изменение
+Rounded Rectangle 7: Валидация
+Rounded Rectangle 9: Serialize
+Rounded Rectangle 11: File.WriteAll
+--- SLIDE 13 ---
+Title 1: Проверка и развитие
+Slide Number Placeholder 3: 13
+Rounded Rectangle 4: ✓  Открыть | занятие
+Rounded Rectangle 6: ✓  Отметить | строки
+Rounded Rectangle 8: ✓  Проверить | поля
+Rounded Rectangle 10: ✓  Сохранить | JSON
+Rounded Rectangle 12: ✓  Открыть | мониторинг
+Rounded Rectangle 13: Реализовано
+Rounded Rectangle 14: Спроектировано
+Rounded Rectangle 15: Дальше
+Rounded Rectangle 18: Журнал | История | Мониторинг | JSON
+Rounded Rectangle 19: REST-контракт | HTTP-коды | роли | БД
+Rounded Rectangle 20: API | авторизация | конкурентность | аудит
+--- SLIDE 14 ---
+Slide Number Placeholder 3: 14
+Rounded Rectangle 4: ✓  Разработан | прототип | на Blazor
+Rounded Rectangle 5: ✓  Реализован | мониторинг | журналов
+Rounded Rectangle 6: ✓  Данные | сохраняются | в JSON
+Rounded Rectangle 7: Ограничения: без REST API, БД, авторизации
+--- SLIDE 15 ---
+Title 1: Список литературы
+Content Placeholder 2: | Roslovtsev V.V. Architecture for Modular Type System for Information Systems Based on Relational-Applicative Technologies // Procedia Computer Science. - 2018. - Vol. 123. - P. 393-402. | Microsoft. Blazor Documentation [Электронный ресурс]. - URL: https://learn.microsoft.com/en-us/aspnet/core/blazor/ (дата обращения: 02.06.2026). | Microsoft. ASP.NET Core Razor components [Электронный ресурс]. URL: https://learn.microsoft.com/aspnet/core/blazor/components/ (дата обращения: 18.06.2026). | Microsoft. Call a web API from an ASP.NET Core Blazor app [Электронный ресурс]. URL: https://learn.microsoft.com/aspnet/core/blazor/call-web-api (дата обращения: 18.06.2026). | Bray T. The JavaScript Object Notation (JSON) Data Interchange Format [Электронный ресурс]. - RFC 8259. - URL: https://www.rfc-editor.org/rfc/rfc8259 (дата обращения: 08.06.2026). |  |
+Slide Number Placeholder 3: 15
+--- SLIDE 16 ---
+Slide Number Placeholder 1: 16
+TextBox 2: Спасибо за внимание!

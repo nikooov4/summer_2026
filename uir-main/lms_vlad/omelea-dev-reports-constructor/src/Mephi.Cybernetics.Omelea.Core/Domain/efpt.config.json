@@ -1,0 +1,254 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "OmeleaContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "Blazor_App_Data",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[Content].[ContentScopes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstanceEdPrograms]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstanceModules]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstanceModuleTasks]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstances]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstanceStudents]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[CourseInstanceStudentTasks]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Course].[Courses]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[CourseInstanceModuleTaskCriteria]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[CourseTaskOptionRelations]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[CourseTaskOptions]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[CourseTaskOptionValues]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[Relations]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentCourseTaskCriteria]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentCourseTaskOptions]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentCourseTasks]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentIndCourseInstanceModuleTaskRels]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentVisitDetailComments]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentVisitDetails]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[StudentVisits]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseLabs].[TaskCriteria]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalListColumns]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalListColumnsCompute]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalListColumnsDependencies]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalListMarks]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalListMarksHistory]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalLists]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalScales]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalScalesEnumRanges]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalScalesEnumValues]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[AppraisalScalesLinear]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[ColumnOperations]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[EnumValuePartialOrdering]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[CourseReport].[ValueFormats]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CourseAuthors]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CourseCurators]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CourseProgramModules]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CoursePrograms]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[Courses]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CourseTasks]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[CourseTaskTypes]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[EducationalGroups]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[EducationalPrograms]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Education].[Specialties]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Organization].[OrgUnits]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Organization].[Positions]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Organization].[Students]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Person].[PersonEmails]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Person].[PersonEmployments]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Person].[PersonEmploymentsInformal]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Person].[PersonPhones]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Person].[Persons]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Organization].[InstructorsView]",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": true,
+   "UseSchemaNamespaces": true,
+   "UseSpatial": false,
+   "UseT4": false
+}

@@ -1,0 +1,60 @@
+@page "/admins/add-admin"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@using Mephi.Cyber.AuthService.Core.Models
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Create Admin</PageTitle>
+
+<MudText Typo="Typo.h5" GutterBottom="true">Create Admin</MudText> 
+
+<MudTextField Class="mb-4" Style="width:20vw" @bind-Value="name" Label="Admin name" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+
+<MudTextField Class="mb-4" Style="width:20vw" @bind-Value="email" Label="Email (optional)" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+
+<MudTextField Class="mb-4" Style="width:20vw" @bind-Value="password" Label="Password" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password"></MudTextField>
+
+<MudButton Class="mt-2" Variant="Variant.Filled" Color="Color.Primary" @onclick="() =>Create(name)">Create Admin</MudButton>
+
+
+@code {
+
+    private string? name;
+    private string? email;
+    private string? password;
+
+    public async Task Create(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
+        {
+            // TODO: Show error message to user
+            return;
+        }
+
+        var dict = new Dictionary<string, string>();
+        dict.Add("username", name);
+        dict.Add("password", password);
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            dict.Add("email", email);
+        }
+        
+        var response = await Http.PostAsync("admin/admin/create", new FormUrlEncodedContent(dict));
+        if (response.IsSuccessStatusCode)
+        {
+            NavManager.NavigateTo("/admins");
+        }
+        else
+        {
+            // TODO: Show error message to user
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize empty form
+    }
+    
+}
+

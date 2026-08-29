@@ -1,0 +1,56 @@
+@page "/statements"
+@using LMSDashboardBlazor.Services.Statements
+@inject StatementService StatementService
+
+<section class="welcome-section statements-hero">
+    <div class="welcome-content statements-hero-content">
+        <div>
+            <p class="statements-eyebrow">Ведомости LMS</p>
+            <h1>Раздел ведомостей</h1>
+            <p class="welcome-text">
+                Создавайте ведомости, заполняйте баллы по разделам и просматривайте итоговую таблицу с оценками, кодами и ECTS.
+            </p>
+        </div>
+
+        <div class="statements-actions">
+            <a class="statement-action-link" href="/statements/constructor">
+                <i class="fas fa-table-list"></i>
+                Создать ведомость
+            </a>
+            <a class="statement-action-link secondary" href="/statements/view">
+                <i class="fas fa-eye"></i>
+                Открыть текущую
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="dashboard-grid statements-home-grid">
+    <section class="dashboard-card statement-entry-card">
+        <div class="card-header">
+            <h2><i class="fas fa-pen-to-square"></i> Конструктор</h2>
+        </div>
+        <div class="card-content statement-entry-content">
+            <p>Задайте количество студентов, число разделов и название экзамена, затем заполните таблицу баллов.</p>
+            <a class="statement-inline-link" href="/statements/constructor">Перейти в конструктор</a>
+        </div>
+    </section>
+
+    <section class="dashboard-card statement-entry-card">
+        <div class="card-header">
+            <h2><i class="fas fa-clipboard-check"></i> Текущая ведомость</h2>
+        </div>
+        <div class="card-content statement-entry-content">
+            <div class="statement-summary">
+                <span class="statement-summary-title">@CurrentName</span>
+                <span>@StudentCount студентов</span>
+            </div>
+            <a class="statement-inline-link" href="/statements/view">Посмотреть таблицу</a>
+        </div>
+    </section>
+</div>
+
+@code {
+    private string CurrentName => StatementService.CurrentStatement?.Name ?? "Ведомость не создана";
+    private int StudentCount => StatementService.CurrentStatement?.Students.Count ?? 0;
+}

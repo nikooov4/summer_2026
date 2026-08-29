@@ -1,0 +1,68 @@
+@page "/statement"
+@using Mephi.Cybernetics.Race.WebApp.Services
+@implements IDisposable
+@inject StatementService StatementService
+
+<h2 class="text-center mb-4">Ведомость: @CurrentStatement?.Name</h2>
+
+@if (CurrentStatement == null || CurrentStatement.Students.Count == 0)
+{
+    <p class="text-center">Нет данных для отображения. Создайте ведомость во вкладке "Конструктор".</p>
+}
+else
+{
+    <table class="table table-dark table-striped text-center align-middle">
+        <thead class="table-primary">
+            <tr>
+                <th>ФИО</th>
+                @foreach (var subject in CurrentStatement.Subjects)
+                {
+                    <th>@subject</th>
+                }
+                <th>Экзамен</th>
+                <th>Сумма</th>
+                <th>Оценка</th>
+                <th>Код</th>
+                <th>ECTS</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in CurrentStatement.Students)
+            {
+                <tr>
+                    <td class="text-start">@student.FullName</td>
+                    @foreach (var score in student.Sections)
+                    {
+                        <td>@score</td>
+                    }
+                    <td>@student.Exam</td>
+                    <td>@student.Total</td>
+                    <td>@student.Mark</td>
+                    <td>@student.Code</td>
+                    <td>@student.ECTS</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private StatementModel? CurrentStatement;
+
+    protected override void OnInitialized()
+    {
+        StatementService.OnStatementChanged += UpdateStatement;
+        UpdateStatement();
+    }
+
+    private void UpdateStatement()
+    {
+        CurrentStatement = StatementService.CurrentStatement;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StatementService.OnStatementChanged -= UpdateStatement;
+    }
+}

@@ -1,0 +1,16 @@
+bin/
+obj/
+_ReSharper
+*.suo
+*.user
+lib/nuget/
+node_modules/
+.vs/
+.hg/
+.idea
+.vscode
+appsettings.*
+.DS_Store
+src/Mephi.Cybernetics.Omelea.ReportsConstructor/db/
+.cursorignore
+db/

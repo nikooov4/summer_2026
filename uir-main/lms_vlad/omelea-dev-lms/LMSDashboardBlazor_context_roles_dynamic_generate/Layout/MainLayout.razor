@@ -1,0 +1,103 @@
+@implements IDisposable
+@inherits LayoutComponentBase
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+@inject NavigationManager NavigationManager
+
+<div class="lms-page-shell">
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>ИИКС Кафедра 22</span>
+            </div>
+
+            <nav class="nav">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/" class="nav-link">Главная</a></li>
+                    <li><a href="/#courses" class="nav-link">Курсы</a></li>
+                    <li><a href="/#calendar" class="nav-link">Календарь</a></li>
+                    <li><a href="/statements" class="nav-link">Ведомости</a></li>
+                    <li><a href="/#profile" class="nav-link">Профиль</a></li>
+                </ul>
+            </nav>
+
+            <div class="user-info">
+                @if (_isAuthenticated)
+                {
+                    <span class="user-name">@(_username ?? "Пользователь")</span>
+                    <button class="user-action-button" @onclick="Logout">Выйти</button>
+                }
+                else
+                {
+                    <button class="user-action-button" @onclick="GoToLogin">Войти</button>
+                }
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        @Body
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 LMS Dashboard. Все права защищены.</p>
+            <div class="footer-links">
+                <a href="#">Помощь</a>
+                <a href="#">Поддержка</a>
+                <a href="#">Конфиденциальность</a>
+            </div>
+        </div>
+    </footer>
+</div>
+
+@code {
+    private bool _isAuthenticated;
+    private string? _username;
+
+    protected override void OnInitialized()
+    {
+        AuthSession.Changed += HandleAuthChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RefreshAuthStateAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleAuthChanged()
+    {
+        await RefreshAuthStateAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAuthStateAsync()
+    {
+        _isAuthenticated = await AuthSession.IsAuthenticatedAsync();
+        _username = await AuthSession.GetUsernameAsync();
+    }
+
+    private void GoToLogin() => NavigationManager.NavigateTo("/login");
+
+    private async Task Logout()
+    {
+        await AuthSession.ClearAsync();
+        NavigationManager.NavigateTo("/login", replace: true);
+    }
+
+    public void Dispose()
+    {
+        AuthSession.Changed -= HandleAuthChanged;
+    }
+}

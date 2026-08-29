@@ -1,0 +1,2 @@
+init:
+	./Scripts/init.sh

@@ -1,0 +1,12 @@
+﻿CREATE TABLE [CourseReport].[EnumValuePartialOrdering] (
+    [Scale1ID] UNIQUEIDENTIFIER NOT NULL,
+    [Code1]    INT              NOT NULL,
+    [Scale2ID] UNIQUEIDENTIFIER NOT NULL,
+    [Code2]    INT              NOT NULL,
+    PRIMARY KEY CLUSTERED ([Scale1ID] ASC, [Code1] ASC, [Scale2ID] ASC, [Code2] ASC),
+    FOREIGN KEY ([Scale1ID]) REFERENCES [CourseReport].[AppraisalScales] ([ID]),
+    FOREIGN KEY ([Scale2ID]) REFERENCES [CourseReport].[AppraisalScales] ([ID]),
+    FOREIGN KEY ([Scale1ID], [Code1]) REFERENCES [CourseReport].[AppraisalScalesEnumValues] ([ScaleID], [Code]),
+    FOREIGN KEY ([Scale2ID], [Code2]) REFERENCES [CourseReport].[AppraisalScalesEnumValues] ([ScaleID], [Code])
+);
+

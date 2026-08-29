@@ -1,0 +1,501 @@
+@page "/admin"
+@using LMSDashboardBlazor.Models
+@using LMSDashboardBlazor.Services.Admin
+@inject LmsCatalogService CatalogService
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+@inject NavigationManager NavigationManager
+
+@if (!ready)
+{
+    <section class="welcome-section statements-compact-hero">
+        <div class="welcome-content">
+            <p class="statements-eyebrow">Тестовая админ-панель</p>
+            <h1>Проверка доступа...</h1>
+        </div>
+    </section>
+}
+else if (!isAdmin)
+{
+    <section class="welcome-section statements-compact-hero">
+        <div class="welcome-content statements-hero-content">
+            <div>
+                <p class="statements-eyebrow">Тестовая админ-панель</p>
+                <h1>Нет прав администратора</h1>
+                <p class="welcome-text">Для проверки войдите демо-пользователем admin на странице авторизации.</p>
+            </div>
+            <a class="statement-action-link" href="/login">На страницу входа</a>
+        </div>
+    </section>
+}
+else
+{
+<section class="welcome-section statements-compact-hero">
+    <div class="welcome-content statements-hero-content">
+        <div>
+            <p class="statements-eyebrow">Тестовая админ-панель</p>
+            <h1>Каталог LMS</h1>
+            <p class="welcome-text">Управление пользователями, курсами и зачислениями для проверки ролей и журналов посещаемости.</p>
+        </div>
+        <div class="statements-actions">
+            <a class="statement-action-link secondary" href="/attendance">
+                <i class="fas fa-clipboard-user"></i>
+                Журнал
+            </a>
+            <a class="statement-action-link secondary" href="/attendance/monitoring">
+                <i class="fas fa-chart-line"></i>
+                Мониторинг
+            </a>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="@GetNoticeClass()" role="status">@statusMessage</div>
+}
+
+<div class="admin-grid">
+    <section class="dashboard-card">
+        <div class="card-header">
+            <h2><i class="fas fa-users"></i> Пользователи</h2>
+        </div>
+        <div class="card-content">
+            <div class="admin-form-grid users">
+                <label class="statement-field">
+                    <span>Логин</span>
+                    <input class="statement-input" @bind="newUsername" />
+                </label>
+                <label class="statement-field">
+                    <span>ФИО</span>
+                    <input class="statement-input" @bind="newFullName" />
+                </label>
+                <label class="statement-field">
+                    <span>Зачетная книжка</span>
+                    <input class="statement-input" @bind="newRecordBook" />
+                </label>
+                <label class="admin-check-field">
+                    <input type="checkbox" @bind="newIsAdmin" />
+                    <span>Админ</span>
+                </label>
+                <button class="statement-primary-button" type="button" @onclick="AddUser">Добавить</button>
+            </div>
+
+            <div class="statement-table-wrap">
+                <table class="statement-table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Логин</th>
+                            <th>ФИО</th>
+                            <th>Роль</th>
+                            <th>Зачетка</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in CatalogService.Users.OrderBy(item => item.FullName))
+                        {
+                            <tr>
+                                <td>@user.Username</td>
+                                <td class="statement-name-cell">@user.FullName</td>
+                                <td>
+                                    @if (user.IsAdmin)
+                                    {
+                                        <span class="role-badge admin">Администратор</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="role-badge student">Пользователь</span>
+                                    }
+                                </td>
+                                <td>@user.RecordBookNumber</td>
+                                <td class="admin-actions-cell">
+                                    <button class="statement-secondary-button" type="button" @onclick="() => ToggleAdmin(user.Id)">
+                                        @(user.IsAdmin ? "Снять админа" : "Сделать админом")
+                                    </button>
+                                    <button class="statement-secondary-button danger" type="button" @onclick="() => RemoveUser(user.Id)">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card admin-transfer-card">
+        <div class="card-header">
+            <h2><i class="fas fa-file-import"></i> Импорт и экспорт пользователей</h2>
+        </div>
+        <div class="card-content">
+            <div class="admin-transfer-toolbar">
+                <label class="statement-field">
+                    <span>Формат</span>
+                    <select class="statement-input" @bind="transferFormat">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </label>
+                <button class="statement-secondary-button" type="button" @onclick="ExportUsers">
+                    <i class="fas fa-file-export"></i>
+                    Сформировать выгрузку
+                </button>
+                <button class="statement-primary-button" type="button" @onclick="ImportUsers">
+                    <i class="fas fa-file-import"></i>
+                    Загрузить из поля
+                </button>
+            </div>
+            <textarea class="statement-input admin-transfer-area"
+                      placeholder="Здесь появится выгрузка пользователей или сюда можно вставить JSON/CSV для загрузки."
+                      @bind="transferPayload"></textarea>
+        </div>
+    </section>
+
+    <section class="dashboard-card">
+        <div class="card-header">
+            <h2><i class="fas fa-book-open"></i> Курсы</h2>
+        </div>
+        <div class="card-content">
+            <div class="admin-form-grid courses">
+                <label class="statement-field">
+                    <span>Код</span>
+                    <input class="statement-input" @bind="newCourseCode" />
+                </label>
+                <label class="statement-field">
+                    <span>Название</span>
+                    <input class="statement-input" @bind="newCourseName" />
+                </label>
+                <label class="statement-field">
+                    <span>Группа</span>
+                    <input class="statement-input" @bind="newGroupName" />
+                </label>
+                <label class="statement-field">
+                    <span>Аудитория</span>
+                    <input class="statement-input" @bind="newRoom" />
+                </label>
+                <button class="statement-primary-button" type="button" @onclick="AddCourse">Добавить</button>
+            </div>
+
+            <div class="statement-table-wrap">
+                <table class="statement-table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Код</th>
+                            <th>Название</th>
+                            <th>Группа</th>
+                            <th>Аудитория</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var course in CatalogService.Courses.OrderBy(item => item.Code))
+                        {
+                            <tr>
+                                <td><strong>@course.Code</strong></td>
+                                <td class="statement-name-cell">@course.Name</td>
+                                <td>@course.GroupName</td>
+                                <td>@course.DefaultRoom</td>
+                                <td class="admin-actions-cell">
+                                    <button class="statement-secondary-button danger" type="button" @onclick="() => RemoveCourse(course.Id)">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card admin-enrollments-card">
+        <div class="card-header">
+            <h2><i class="fas fa-user-plus"></i> Зачисления и роли на курсах</h2>
+        </div>
+        <div class="card-content">
+            <div class="admin-form-grid enrollments">
+                <label class="statement-field">
+                    <span>Пользователь</span>
+                    <select class="statement-input" @bind="selectedUserId">
+                        @foreach (var user in CatalogService.Users.OrderBy(item => item.FullName))
+                        {
+                            <option value="@user.Id">@user.FullName (@user.Username)</option>
+                        }
+                    </select>
+                </label>
+                <label class="statement-field">
+                    <span>Курс</span>
+                    <select class="statement-input" @bind="selectedCourseId">
+                        @foreach (var course in CatalogService.Courses.OrderBy(item => item.Code))
+                        {
+                            <option value="@course.Id">@course.Code · @course.GroupName</option>
+                        }
+                    </select>
+                </label>
+                <label class="statement-field">
+                    <span>Роль</span>
+                    <select class="statement-input" @bind="selectedRole">
+                        @foreach (var role in CourseRoles)
+                        {
+                            <option value="@role">@LmsCatalogService.GetRoleLabel(role)</option>
+                        }
+                    </select>
+                </label>
+                <button class="statement-primary-button" type="button" @onclick="AddEnrollment">Назначить</button>
+            </div>
+
+            <div class="statement-table-wrap">
+                <table class="statement-table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Курс</th>
+                            <th>Пользователь</th>
+                            <th>Роль</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enrollment in EnrollmentRows)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@enrollment.Course.Code</strong>
+                                    <small class="attendance-muted">@enrollment.Course.GroupName</small>
+                                </td>
+                                <td class="statement-name-cell">
+                                    @enrollment.User.FullName
+                                    <small class="attendance-muted">@enrollment.User.Username</small>
+                                </td>
+                                <td>
+                                    <span class="role-badge @GetRoleBadgeClass(enrollment.Enrollment.Role)">
+                                        @LmsCatalogService.GetRoleLabel(enrollment.Enrollment.Role)
+                                    </span>
+                                </td>
+                                <td class="admin-actions-cell">
+                                    <button class="statement-secondary-button danger" type="button" @onclick="() => RemoveEnrollment(enrollment.Enrollment.Id)">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+}
+
+@code {
+    private bool ready;
+    private bool isAdmin;
+    private string newUsername = string.Empty;
+    private string newFullName = string.Empty;
+    private string newRecordBook = string.Empty;
+    private bool newIsAdmin;
+
+    private string newCourseCode = string.Empty;
+    private string newCourseName = string.Empty;
+    private string newGroupName = "Б23-504";
+    private string newRoom = string.Empty;
+
+    private string selectedUserId = string.Empty;
+    private string selectedCourseId = string.Empty;
+    private LmsCourseRole selectedRole = LmsCourseRole.Student;
+    private string transferFormat = "json";
+    private string transferPayload = string.Empty;
+    private string? statusMessage;
+    private bool statusIsError;
+
+    private static readonly LmsCourseRole[] CourseRoles =
+    [
+        LmsCourseRole.Student,
+        LmsCourseRole.Teacher,
+        LmsCourseRole.Assistant,
+        LmsCourseRole.Curator
+    ];
+
+    private IReadOnlyList<EnrollmentRow> EnrollmentRows
+    {
+        get
+        {
+            var rows = new List<EnrollmentRow>();
+            foreach (var enrollment in CatalogService.Enrollments)
+            {
+                var user = CatalogService.GetUser(enrollment.UserId);
+                var course = CatalogService.GetCourse(enrollment.CourseId);
+                if (user is not null && course is not null)
+                {
+                    rows.Add(new EnrollmentRow(enrollment, user, course));
+                }
+            }
+
+            return rows
+                .OrderBy(row => row.Course.Code)
+                .ThenBy(row => row.User.FullName)
+                .ToList();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
+        selectedCourseId = CatalogService.Courses.FirstOrDefault()?.Id ?? string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthSession.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login", replace: true);
+            return;
+        }
+
+        var username = await AuthSession.GetUsernameAsync();
+        isAdmin = CatalogService.IsAdmin(username);
+        ready = true;
+        StateHasChanged();
+    }
+
+    private void AddUser()
+    {
+        TryRun(() =>
+        {
+            CatalogService.AddUser(newUsername, newFullName, newRecordBook, newIsAdmin);
+            newUsername = string.Empty;
+            newFullName = string.Empty;
+            newRecordBook = string.Empty;
+            newIsAdmin = false;
+            selectedUserId = CatalogService.Users.Last().Id;
+            statusMessage = "Пользователь добавлен.";
+        });
+    }
+
+    private void ToggleAdmin(string userId)
+    {
+        TryRun(() =>
+        {
+            CatalogService.ToggleAdmin(userId);
+            statusMessage = "Права администратора обновлены.";
+        });
+    }
+
+    private void RemoveUser(string userId)
+    {
+        TryRun(() =>
+        {
+            CatalogService.RemoveUser(userId);
+            selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
+            statusMessage = "Пользователь удален вместе с зачислениями.";
+        });
+    }
+
+    private void ExportUsers()
+    {
+        transferPayload = transferFormat == "csv"
+            ? CatalogService.ExportUsersCsv()
+            : CatalogService.ExportUsersJson();
+
+        statusIsError = false;
+        statusMessage = transferFormat == "csv"
+            ? "CSV-выгрузка пользователей сформирована."
+            : "JSON-выгрузка пользователей сформирована.";
+    }
+
+    private void ImportUsers()
+    {
+        TryRun(() =>
+        {
+            var count = transferFormat == "csv"
+                ? CatalogService.ImportUsersCsv(transferPayload)
+                : CatalogService.ImportUsersJson(transferPayload);
+
+            selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
+            statusMessage = $"Загружено или обновлено пользователей: {count}.";
+        });
+    }
+
+    private void AddCourse()
+    {
+        TryRun(() =>
+        {
+            CatalogService.AddCourse(newCourseCode, newCourseName, newGroupName, newRoom);
+            newCourseCode = string.Empty;
+            newCourseName = string.Empty;
+            newGroupName = "Б23-504";
+            newRoom = string.Empty;
+            selectedCourseId = CatalogService.Courses.Last().Id;
+            statusMessage = "Курс добавлен. Для него автоматически появится журнал посещаемости.";
+        });
+    }
+
+    private void RemoveCourse(string courseId)
+    {
+        TryRun(() =>
+        {
+            CatalogService.RemoveCourse(courseId);
+            selectedCourseId = CatalogService.Courses.FirstOrDefault()?.Id ?? string.Empty;
+            statusMessage = "Курс удален вместе с зачислениями.";
+        });
+    }
+
+    private void AddEnrollment()
+    {
+        TryRun(() =>
+        {
+            CatalogService.AddEnrollment(selectedUserId, selectedCourseId, selectedRole);
+            statusMessage = "Роль на курсе назначена.";
+        });
+    }
+
+    private void RemoveEnrollment(string enrollmentId)
+    {
+        TryRun(() =>
+        {
+            CatalogService.RemoveEnrollment(enrollmentId);
+            statusMessage = "Зачисление удалено.";
+        });
+    }
+
+    private void TryRun(Action action)
+    {
+        try
+        {
+            statusIsError = false;
+            action();
+        }
+        catch (InvalidOperationException exception)
+        {
+            statusIsError = true;
+            statusMessage = exception.Message;
+        }
+    }
+
+    private string GetNoticeClass()
+    {
+        return statusIsError ? "attendance-notice error" : "attendance-notice success";
+    }
+
+    private static string GetRoleBadgeClass(LmsCourseRole role)
+    {
+        return role switch
+        {
+            LmsCourseRole.Admin => "admin",
+            LmsCourseRole.Teacher => "teacher",
+            LmsCourseRole.Assistant => "assistant",
+            LmsCourseRole.Curator => "curator",
+            _ => "student"
+        };
+    }
+
+    private sealed record EnrollmentRow(
+        LmsEnrollmentModel Enrollment,
+        LmsUserModel User,
+        LmsCourseModel Course);
+}

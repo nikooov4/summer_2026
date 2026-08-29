@@ -1,0 +1,124 @@
+@page "/login"
+@layout LoginLayout
+@inject NavigationManager NavigationManager
+@inject LMSDashboardBlazor.Services.AuthOptions AuthOptions
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+
+<PageTitle>Авторизация</PageTitle>
+
+<section class="auth-shell">
+    <div class="auth-window">
+        <div class="auth-logo">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+
+        <h1>Авторизация в LMS</h1>
+        <p class="auth-subtitle">
+            Для входа используется единая аутентификация МИФИ.
+            После успешного входа вы автоматически вернётесь в систему.
+        </p>
+
+        <button class="auth-button" @onclick="LoginViaMephi">
+            <i class="fas fa-right-to-bracket"></i>
+            <span>Войти через МИФИ</span>
+        </button>
+
+        <div class="demo-login-grid">
+            <button type="button" @onclick='() => LoginDemoAsync("admin")'>Админ</button>
+            <button type="button" @onclick='() => LoginDemoAsync("teacher")'>Преподаватель</button>
+            <button type="button" @onclick='() => LoginDemoAsync("student")'>Студент</button>
+        </div>
+
+        <div class="auth-note">
+            Вход выполняется через внешний сервис авторизации,
+            после чего LMS получает токен доступа и открывает главную страницу.
+        </div>
+    </div>
+</section>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var token = GetTokenFromQuery(uri.Query);
+
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            await AuthSession.SetTokenAsync(token);
+            NavigationManager.NavigateTo("/", replace: true);
+            return;
+        }
+
+        if (await AuthSession.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/", replace: true);
+        }
+    }
+
+    private void LoginViaMephi()
+    {
+        var lmsBaseUrl = NavigationManager.BaseUri.TrimEnd('/');
+        var authCallback =
+            $"{AuthOptions.AuthServiceBaseUrl.TrimEnd('/')}/mephi_login?redirectUri={Uri.EscapeDataString($"{lmsBaseUrl}/login")}&projectName={Uri.EscapeDataString(AuthOptions.ProjectName)}";
+
+        var casUrl = $"{AuthOptions.CasLoginBaseUrl}?service={Uri.EscapeDataString(authCallback)}";
+        NavigationManager.NavigateTo(casUrl, forceLoad: true);
+    }
+
+    private async Task LoginDemoAsync(string username)
+    {
+        await AuthSession.SetTokenAsync(CreateDemoToken(username));
+        NavigationManager.NavigateTo("/", replace: true);
+    }
+
+    private static string CreateDemoToken(string username)
+    {
+        var header = Base64UrlEncode(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            alg = "none",
+            typ = "JWT"
+        }));
+
+        var payload = Base64UrlEncode(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            username,
+            name = username,
+            demo = true
+        }));
+
+        return $"{header}.{payload}.demo";
+    }
+
+    private static string Base64UrlEncode(string value)
+    {
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static string? GetTokenFromQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return null;
+        }
+
+        var trimmed = query.TrimStart('?');
+        foreach (var part in trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pieces = part.Split('=', 2);
+            if (pieces.Length == 2 && string.Equals(pieces[0], "token", StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(pieces[1]);
+            }
+        }
+
+        return null;
+    }
+}

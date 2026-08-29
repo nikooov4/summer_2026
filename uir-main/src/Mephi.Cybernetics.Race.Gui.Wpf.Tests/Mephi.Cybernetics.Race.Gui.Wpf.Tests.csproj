@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netcoreapp3.1;net4.7.2</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+		<OutputPath>..\..\bin\Tests\Debug\</OutputPath>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+		<OutputPath>..\..\bin\Tests\Release\</OutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Mephi.Cybernetics.Race.Gui.Wpf\Mephi.Cybernetics.Race.Gui.Wpf.csproj" />
+	</ItemGroup>
+
+</Project>

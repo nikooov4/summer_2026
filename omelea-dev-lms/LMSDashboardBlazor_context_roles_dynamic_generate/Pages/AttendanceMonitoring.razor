@@ -1,0 +1,610 @@
+@page "/attendance/monitoring"
+@using LMSDashboardBlazor.Models.Attendance
+@using LMSDashboardBlazor.Services.Attendance
+@inject AttendanceService AttendanceService
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+@inject NavigationManager NavigationManager
+
+<section class="welcome-section statements-compact-hero">
+    <div class="welcome-content statements-hero-content">
+        <div>
+            <p class="statements-eyebrow">Мониторинг посещаемости</p>
+            <h1>@(CanManageMonitoring ? "Состояние журналов" : "Мои показатели")</h1>
+            <p class="welcome-text">@GetPeriodDescription()</p>
+        </div>
+
+        <div class="statements-actions">
+            <a class="statement-action-link" href="/attendance">
+                <i class="fas fa-clipboard-user"></i>
+                @(CanManageMonitoring ? "Открыть журнал" : "Мои занятия")
+            </a>
+        </div>
+    </div>
+</section>
+
+@if (CanManageMonitoring)
+{
+    <section class="attendance-monitoring-summary">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="stat-info">
+                <h3>@Summary.CompletenessPercent%</h3>
+                <p>Полнота журналов</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+                <h3>@GetAttendanceRateText()</h3>
+                <p>Посещаемость</p>
+            </div>
+        </div>
+        <div class="stat-card attention">
+            <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-info">
+                <h3>@Summary.UnfinishedLessons</h3>
+                <p>Незавершенных</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+                <h3>@(Summary.Absent + Summary.Late)</h3>
+                <p>Отклонений</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="attendance-layout monitoring-layout">
+        <section class="dashboard-card attendance-side-card">
+            <div class="card-header">
+                <h2><i class="fas fa-filter"></i> Фильтры</h2>
+            </div>
+            <div class="card-content">
+                <div class="attendance-filter-group">
+                    @foreach (var option in Enum.GetValues<MonitoringPeriod>())
+                    {
+                        <button class="@GetPeriodButtonClass(option)" type="button" @onclick="() => SetPeriod(option)">
+                            @GetPeriodLabel(option)
+                        </button>
+                    }
+                </div>
+
+                <div class="attendance-filter-group">
+                    @foreach (var option in Enum.GetValues<LessonStateFilter>())
+                    {
+                        <button class="@GetStateButtonClass(option)" type="button" @onclick="() => SetLessonState(option)">
+                            <span>@GetStateFilterLabel(option)</span>
+                            <small>@GetStateCount(option)</small>
+                        </button>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-card attendance-work-card">
+            <div class="card-header">
+                <h2><i class="fas fa-list-check"></i> Контроль заполнения</h2>
+                <span class="section-count">@VisibleLessons.Count занятий</span>
+            </div>
+            <div class="card-content">
+                @if (!string.IsNullOrWhiteSpace(statusMessage))
+                {
+                    <div class="@GetNoticeClass()" role="status">@statusMessage</div>
+                }
+
+                <div class="statement-table-wrap">
+                    <table class="statement-table attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Занятие</th>
+                                <th>Состояние</th>
+                                <th>Заполнение</th>
+                                <th>Посещение</th>
+                                <th>Обновлено</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in VisibleLessons)
+                            {
+                                <tr>
+                                    <td class="statement-name-cell attendance-student-cell">
+                                        <strong>@item.Lesson.Topic</strong>
+                                        <small>@item.Lesson.StartsAt.ToString("dd.MM.yyyy, HH:mm") · @item.Lesson.GroupName · @item.Lesson.Room</small>
+                                    </td>
+                                    <td>
+                                        <span class="@GetLessonStateClass(item)">@GetLessonStateLabel(item)</span>
+                                    </td>
+                                    <td>
+                                        <div class="attendance-progress">
+                                            <span style="@GetProgressStyle(item.CompletionPercent)"></span>
+                                        </div>
+                                        <small>@item.Summary.Completed/@item.Summary.Total строк</small>
+                                    </td>
+                                    <td>
+                                        <strong>@item.Summary.AttendancePercent%</strong>
+                                        <small class="attendance-muted">@item.Summary.Absent проп., @item.Summary.Late опозд.</small>
+                                    </td>
+                                    <td>@item.LastUpdatedAt.ToString("dd.MM, HH:mm")</td>
+                                    <td class="attendance-monitoring-actions">
+                                        @if (item.Lesson.IsCompleted)
+                                        {
+                                            <button class="statement-secondary-button" type="button" @onclick="() => Reopen(item.Lesson.Id)">
+                                                Возобновить журнал
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="statement-secondary-button"
+                                                    type="button"
+                                                    disabled="@(item.Summary.Unmarked > 0)"
+                                                    title="@GetCompleteTitle(item)"
+                                                    @onclick="() => Complete(item.Lesson.Id)">
+                                                Завершить журнал
+                                            </button>
+                                        }
+                                        <a class="statement-inline-link attendance-open-link" href="@GetJournalLink(item.Lesson.Id)">
+                                            <i class="fas fa-arrow-right"></i>
+                                            Открыть
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="dashboard-card statement-table-card">
+        <div class="card-header">
+            <h2><i class="fas fa-user-clock"></i> Студенты, требующие внимания</h2>
+        </div>
+        <div class="card-content">
+            <div class="attendance-watch-controls">
+                <label class="statement-field">
+                    <span>Выбранный студент</span>
+                    <select class="statement-input" @bind="selectedStudentId">
+                        @foreach (var item in WatchStudents)
+                        {
+                            <option value="@item.Student.Id">@item.Student.FullName</option>
+                        }
+                    </select>
+                </label>
+                <label class="statement-field">
+                    <span>Поиск</span>
+                    <input class="statement-input"
+                           placeholder="ФИО или зачетная книжка"
+                           @bind="studentSearch"
+                           @bind:event="oninput" />
+                </label>
+            </div>
+
+            @if (SelectedStudentMonitoring is not null)
+            {
+                <div class="attendance-selected-student">
+                    <div>
+                        <p class="statements-eyebrow">Выбранный студент</p>
+                        <h3>@SelectedStudentMonitoring.Student.FullName</h3>
+                        <span>@SelectedStudentMonitoring.Student.RecordBookNumber · @SelectedStudentMonitoring.Lessons занятий</span>
+                    </div>
+                    <div class="@GetStudentRateClass(SelectedStudentMonitoring)">
+                        <strong>@GetStudentRateText(SelectedStudentMonitoring)</strong>
+                        <small>@SelectedStudentMonitoring.Absent проп., @SelectedStudentMonitoring.Late опозд.</small>
+                    </div>
+                    <a class="statement-inline-link" href="@GetStudentCardLink(SelectedStudentMonitoring.Student.Id)">
+                        Открыть карточку
+                    </a>
+                </div>
+            }
+
+            <div class="attendance-watch-list">
+                @foreach (var item in VisibleStudents)
+                {
+                    <button class="@GetWatchRowClass(item)" type="button" @onclick="() => SelectStudent(item.Student.Id)">
+                        <span>
+                            <strong>@item.Student.FullName</strong>
+                            <small>@item.Student.RecordBookNumber · @item.Lessons занятий</small>
+                        </span>
+                        <span class="@GetStudentRateClass(item)">
+                            <strong>@GetStudentRateText(item)</strong>
+                            <small>@item.Absent проп., @item.Late опозд.</small>
+                        </span>
+                    </button>
+                }
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    <section class="attendance-monitoring-summary student-only">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+                <h3>@StudentSummary.AttendancePercent%</h3>
+                <p>Моя посещаемость</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <h3>@StudentSummary.Completed</h3>
+                <p>Учтенных занятий</p>
+            </div>
+        </div>
+        <div class="stat-card attention">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+                <h3>@StudentSummary.Late</h3>
+                <p>Опозданий</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-xmark"></i></div>
+            <div class="stat-info">
+                <h3>@StudentSummary.Absent</h3>
+                <p>Пропусков</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card statement-table-card">
+        <div class="card-header">
+            <h2><i class="fas fa-clock-rotate-left"></i> Моя история</h2>
+        </div>
+        <div class="card-content">
+            <div class="statement-table-wrap">
+                <table class="statement-table attendance-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Занятие</th>
+                            <th>Статус</th>
+                            <th>Подробности</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in StudentHistory)
+                        {
+                            <tr>
+                                <td>@item.Lesson.StartsAt.ToString("dd.MM.yyyy")</td>
+                                <td class="statement-name-cell attendance-student-cell">
+                                    <strong>@item.Lesson.CourseName</strong>
+                                    <small>@item.Lesson.Topic</small>
+                                </td>
+                                <td>
+                                    <span class="@GetStatusBadgeClass(item.Entry.Status)">
+                                        @AttendanceService.GetStatusLabel(item.Entry.Status)
+                                    </span>
+                                </td>
+                                <td>@GetEntryDetails(item.Entry)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private MonitoringPeriod period = MonitoringPeriod.ThirtyDays;
+    private LessonStateFilter lessonState = LessonStateFilter.All;
+    private string studentSearch = string.Empty;
+    private string selectedStudentId = string.Empty;
+    private string? statusMessage;
+    private bool statusIsError;
+    private bool isAuthenticated;
+    private string? username;
+
+    private DateTime? PeriodStart => period switch
+    {
+        MonitoringPeriod.SevenDays => DateTime.Today.AddDays(-6),
+        MonitoringPeriod.ThirtyDays => DateTime.Today.AddDays(-29),
+        _ => null
+    };
+
+    private IReadOnlyList<AttendanceLessonModel> UserLessons =>
+        isAuthenticated
+            ? AttendanceService.GetVisibleLessons(username)
+            : Array.Empty<AttendanceLessonModel>();
+
+    private bool CanManageMonitoring =>
+        UserLessons.Any(lesson => AttendanceService.CanEditLesson(username, lesson));
+
+    private AttendanceMonitoringSummaryModel Summary => AttendanceService.GetMonitoringSummary(PeriodStart, username);
+
+    private IReadOnlyList<AttendanceLessonMonitoringModel> LessonItems =>
+        isAuthenticated
+            ? AttendanceService.GetLessonMonitoring(PeriodStart, username)
+            : Array.Empty<AttendanceLessonMonitoringModel>();
+
+    private IReadOnlyList<AttendanceLessonMonitoringModel> VisibleLessons =>
+        LessonItems.Where(MatchesLessonState).ToList();
+
+    private IReadOnlyList<AttendanceStudentMonitoringModel> WatchStudents =>
+        AttendanceService.GetStudentMonitoring(PeriodStart, username);
+
+    private AttendanceStudentMonitoringModel? SelectedStudentMonitoring =>
+        WatchStudents.FirstOrDefault(item => item.Student.Id == selectedStudentId) ??
+        WatchStudents.FirstOrDefault();
+
+    private IReadOnlyList<AttendanceStudentMonitoringModel> VisibleStudents =>
+        WatchStudents
+            .Where(item =>
+                string.IsNullOrWhiteSpace(studentSearch) ||
+                item.Student.FullName.Contains(studentSearch, StringComparison.OrdinalIgnoreCase) ||
+                item.Student.RecordBookNumber.Contains(studentSearch, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(item => item.Student.Id == selectedStudentId)
+            .ThenBy(item => item.AttendancePercent)
+            .ThenBy(item => item.Student.FullName)
+            .Take(8)
+            .ToList();
+
+    private string? CurrentStudentId => AttendanceService.GetCurrentStudent(username)?.Id;
+
+    private IReadOnlyList<AttendanceHistoryItemModel> StudentHistory =>
+        string.IsNullOrWhiteSpace(CurrentStudentId)
+            ? Array.Empty<AttendanceHistoryItemModel>()
+            : AttendanceService.GetStudentHistory(CurrentStudentId)
+                .Where(item => UserLessons.Any(lesson => lesson.Id == item.Lesson.Id))
+                .ToList();
+
+    private AttendanceSummaryModel StudentSummary => BuildSummary(StudentHistory.Select(item => item.Entry));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        isAuthenticated = await AuthSession.IsAuthenticatedAsync();
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login", replace: true);
+            return;
+        }
+
+        username = await AuthSession.GetUsernameAsync();
+        selectedStudentId = WatchStudents.FirstOrDefault()?.Student.Id ?? string.Empty;
+        StateHasChanged();
+    }
+
+    private void SetPeriod(MonitoringPeriod value)
+    {
+        period = value;
+        selectedStudentId = WatchStudents.FirstOrDefault()?.Student.Id ?? selectedStudentId;
+        ClearStatus();
+    }
+
+    private void SetLessonState(LessonStateFilter value)
+    {
+        lessonState = value;
+        ClearStatus();
+    }
+
+    private void SelectStudent(string studentId)
+    {
+        selectedStudentId = studentId;
+    }
+
+    private void Complete(string lessonId)
+    {
+        TryRun(() =>
+        {
+            AttendanceService.CompleteLesson(lessonId);
+            statusMessage = "Журнал завершен и включен в итоговые показатели.";
+        });
+    }
+
+    private void Reopen(string lessonId)
+    {
+        TryRun(() =>
+        {
+            AttendanceService.ReopenLesson(lessonId);
+            statusMessage = "Журнал снова открыт для редактирования.";
+        });
+    }
+
+    private void TryRun(Action action)
+    {
+        try
+        {
+            statusIsError = false;
+            action();
+        }
+        catch (InvalidOperationException exception)
+        {
+            statusIsError = true;
+            statusMessage = exception.Message;
+        }
+    }
+
+    private void ClearStatus()
+    {
+        statusMessage = null;
+        statusIsError = false;
+    }
+
+    private bool MatchesLessonState(AttendanceLessonMonitoringModel item)
+    {
+        return lessonState switch
+        {
+            LessonStateFilter.Completed => item.Lesson.IsCompleted,
+            LessonStateFilter.Unfinished => !item.Lesson.IsCompleted,
+            LessonStateFilter.Attention => item.NeedsAttention,
+            _ => true
+        };
+    }
+
+    private int GetStateCount(LessonStateFilter value)
+    {
+        return value switch
+        {
+            LessonStateFilter.Completed => LessonItems.Count(item => item.Lesson.IsCompleted),
+            LessonStateFilter.Unfinished => LessonItems.Count(item => !item.Lesson.IsCompleted),
+            LessonStateFilter.Attention => LessonItems.Count(item => item.NeedsAttention),
+            _ => LessonItems.Count
+        };
+    }
+
+    private string GetAttendanceRateText()
+    {
+        return Summary.CompletedLessons == 0 ? "-" : $"{Summary.AttendancePercent}%";
+    }
+
+    private static string GetStudentRateText(AttendanceStudentMonitoringModel item)
+    {
+        return item.Lessons == 0 ? "-" : $"{item.AttendancePercent}%";
+    }
+
+    private static string GetStudentRateClass(AttendanceStudentMonitoringModel item)
+    {
+        return item.Lessons > 0 && item.AttendancePercent < 75
+            ? "attendance-watch-rate attention"
+            : "attendance-watch-rate";
+    }
+
+    private static string GetLessonStateLabel(AttendanceLessonMonitoringModel item)
+    {
+        if (item.Lesson.IsCompleted)
+        {
+            return "Завершен";
+        }
+
+        return item.NeedsAttention ? "Требует внимания" : "Черновик";
+    }
+
+    private static string GetLessonStateClass(AttendanceLessonMonitoringModel item)
+    {
+        if (item.Lesson.IsCompleted)
+        {
+            return "attendance-row-state saved";
+        }
+
+        return item.NeedsAttention
+            ? "attendance-row-state error"
+            : "attendance-row-state draft";
+    }
+
+    private static string GetCompleteTitle(AttendanceLessonMonitoringModel item)
+    {
+        return item.Summary.Unmarked > 0
+            ? $"Сначала отметьте всех студентов: осталось {item.Summary.Unmarked}"
+            : "Завершить журнал";
+    }
+
+    private static string GetProgressStyle(int percent)
+    {
+        return $"width: {Math.Clamp(percent, 0, 100)}%";
+    }
+
+    private static string GetJournalLink(string lessonId)
+    {
+        return $"/attendance?lesson={Uri.EscapeDataString(lessonId)}";
+    }
+
+    private static string GetStudentCardLink(string studentId)
+    {
+        return $"/attendance?view=student&student={Uri.EscapeDataString(studentId)}";
+    }
+
+    private string GetPeriodButtonClass(MonitoringPeriod value)
+    {
+        return value == period ? "attendance-filter-button active" : "attendance-filter-button";
+    }
+
+    private string GetStateButtonClass(LessonStateFilter value)
+    {
+        return value == lessonState ? "attendance-lesson-button active" : "attendance-lesson-button";
+    }
+
+    private string GetWatchRowClass(AttendanceStudentMonitoringModel item)
+    {
+        return item.Student.Id == selectedStudentId
+            ? "attendance-watch-row selected"
+            : "attendance-watch-row";
+    }
+
+    private string GetNoticeClass()
+    {
+        return statusIsError ? "attendance-notice error" : "attendance-notice success";
+    }
+
+    private string GetPeriodDescription()
+    {
+        return period switch
+        {
+            MonitoringPeriod.SevenDays => $"с {DateTime.Today.AddDays(-6):dd.MM.yyyy} по {DateTime.Today:dd.MM.yyyy}",
+            MonitoringPeriod.ThirtyDays => $"с {DateTime.Today.AddDays(-29):dd.MM.yyyy} по {DateTime.Today:dd.MM.yyyy}",
+            _ => "за все время"
+        };
+    }
+
+    private static string GetPeriodLabel(MonitoringPeriod value)
+    {
+        return value switch
+        {
+            MonitoringPeriod.SevenDays => "7 дней",
+            MonitoringPeriod.ThirtyDays => "30 дней",
+            _ => "Все время"
+        };
+    }
+
+    private static string GetStateFilterLabel(LessonStateFilter value)
+    {
+        return value switch
+        {
+            LessonStateFilter.Completed => "Завершенные",
+            LessonStateFilter.Unfinished => "Незавершенные",
+            LessonStateFilter.Attention => "Требуют внимания",
+            _ => "Все журналы"
+        };
+    }
+
+    private static string GetEntryDetails(AttendanceEntryModel entry)
+    {
+        if (entry.Status == AttendanceStatus.Late && entry.LateMinutes is not null)
+        {
+            return $"Опоздание на {entry.LateMinutes} мин. {entry.Comment}".Trim();
+        }
+
+        return entry.Comment ?? string.Empty;
+    }
+
+    private static string GetStatusBadgeClass(AttendanceStatus status)
+    {
+        return $"attendance-status-badge status-{status.ToString().ToLowerInvariant()}";
+    }
+
+    private static AttendanceSummaryModel BuildSummary(IEnumerable<AttendanceEntryModel> entries)
+    {
+        var list = entries.ToList();
+        return new AttendanceSummaryModel(
+            list.Count,
+            list.Count(entry => entry.Status == AttendanceStatus.Present),
+            list.Count(entry => entry.Status == AttendanceStatus.Late),
+            list.Count(entry => entry.Status == AttendanceStatus.Excused),
+            list.Count(entry => entry.Status == AttendanceStatus.Absent),
+            list.Count(entry => entry.Status == AttendanceStatus.Unmarked));
+    }
+
+    private enum MonitoringPeriod
+    {
+        SevenDays,
+        ThirtyDays,
+        AllTime
+    }
+
+    private enum LessonStateFilter
+    {
+        All,
+        Completed,
+        Unfinished,
+        Attention
+    }
+}

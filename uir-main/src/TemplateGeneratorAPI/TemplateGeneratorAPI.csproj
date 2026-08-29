@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'TemplateGenerator' " />
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.18.0" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="6.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql" Version="6.0.7" />
+    <PackageReference Include="OpenXmlPowerTools.NetStandard" Version="4.6.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mephi.Cybernetics.Race.Core\Mephi.Cybernetics.Race.Core.csproj" />
+    <ProjectReference Include="..\DataAccess\Mephi.Cybernetics.Race.DataAccess.csproj" />
+  </ItemGroup>
+</Project>

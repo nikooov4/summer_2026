@@ -1,0 +1,556 @@
+@page "/"
+@rendermode InteractiveServer
+@inject ConceptWorkspace Workspace
+
+<PageTitle>Концепты</PageTitle>
+
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">CM</div>
+            <div>
+                <div class="brand-title">Concept Mapping</div>
+                <div class="brand-subtitle">ведомости и посещения</div>
+            </div>
+        </div>
+
+        <nav class="app-navigation" aria-label="Разделы приложения">
+            <a class="app-nav-link" href="/monitoring">
+                <span>Мониторинг</span>
+                <small>сводка за период</small>
+            </a>
+            <a class="app-nav-link" href="/attendance">
+                <span>Журнал посещений</span>
+                <small>рабочий экран</small>
+            </a>
+            <a class="app-nav-link active" href="/">
+                <span>Концепты</span>
+                <small>структура ведомостей</small>
+            </a>
+        </nav>
+
+        <form class="compact-form" @onsubmit="CreateConcept" @onsubmit:preventDefault="true">
+            <label for="newConceptName">Концепт</label>
+            <div class="inline-control">
+                <input id="newConceptName" placeholder="Student" @bind="newConceptName" @bind:event="oninput" />
+                <button class="icon-button primary" type="submit" title="Добавить концепт">+</button>
+            </div>
+        </form>
+
+        <nav class="concept-list" aria-label="Концепты">
+            @foreach (var concept in Workspace.Concepts)
+            {
+                <button class="@GetConceptButtonClass(concept)" type="button" @onclick="() => SelectConcept(concept.Id)">
+                    <span>@concept.Name</span>
+                    <small>@concept.Attributes.Count столб.</small>
+                </button>
+            }
+        </nav>
+    </aside>
+
+    <main class="workspace">
+        @if (CurrentConcept is null)
+        {
+            <section class="empty-state">
+                <h1>Концептов нет</h1>
+                <button class="text-button primary" type="button" @onclick="ResetSample">Загрузить пример</button>
+            </section>
+        }
+        else
+        {
+            <section class="topbar">
+                <div>
+                    <p class="eyebrow">Текущая ведомость</p>
+                    <h1>@CurrentConcept.Name</h1>
+                </div>
+                <div class="summary">
+                    <div>
+                        <strong>@CurrentConcept.Attributes.Count</strong>
+                        <span>столбцов</span>
+                    </div>
+                    <div>
+                        <strong>@CurrentConcept.Rows.Count</strong>
+                        <span>строк</span>
+                    </div>
+                    <div>
+                        <strong>@CurrentConcept.ComputableAttributeCount</strong>
+                        <span>формул</span>
+                    </div>
+                </div>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(statusMessage))
+            {
+                <div class="@GetStatusClass()" role="status">@statusMessage</div>
+            }
+
+            @if (ValidationErrors.Count > 0)
+            {
+                <section class="notice error">
+                    @foreach (var error in ValidationErrors)
+                    {
+                        <div>@error</div>
+                    }
+                </section>
+            }
+
+            <section class="data-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Описание</p>
+                        <h2>Столбцы</h2>
+                    </div>
+                    <button class="text-button" type="button" @onclick="StartNewAttribute">Новый столбец</button>
+                </div>
+
+                <div class="table-frame">
+                    <table class="schema-table">
+                        <thead>
+                            <tr>
+                                <th>Название</th>
+                                <th>Тип</th>
+                                <th>Режим</th>
+                                <th>Формула</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var column in CurrentConcept.Attributes)
+                            {
+                                <tr class="@GetAttributeRowClass(column)" @onclick="() => BeginEditAttribute(column)">
+                                    <td>@column.Name</td>
+                                    <td><span class="type-chip">@column.Type</span></td>
+                                    <td>@GetAttributeMode(column)</td>
+                                    <td class="formula-cell">@column.Expression</td>
+                                    <td class="row-actions">
+                                        <button class="icon-button danger" type="button" title="Удалить столбец" @onclick="() => DeleteAttribute(column.Id)" @onclick:stopPropagation="true">x</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="data-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Экземпляры</p>
+                        <h2>Предпросмотр таблицы</h2>
+                    </div>
+                    <button class="text-button" type="button" @onclick="AddPreviewRow">Добавить строку</button>
+                </div>
+
+                <div class="table-frame preview-frame">
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                @foreach (var column in CurrentConcept.Attributes)
+                                {
+                                    <th>@column.Name</th>
+                                }
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var rowIndex = 0; rowIndex < CurrentConcept.Rows.Count; rowIndex++)
+                            {
+                                var row = CurrentConcept.Rows[rowIndex];
+                                <tr @key="row.Id">
+                                    <td class="row-index">@(rowIndex + 1)</td>
+                                    @foreach (var column in CurrentConcept.Attributes)
+                                    {
+                                        <td>
+                                            @if (column.IsComputable)
+                                            {
+                                                <input class="cell-input computed" value="@GetComputedPreview(CurrentConcept, rowIndex, column)" disabled />
+                                            }
+                                            else
+                                            {
+                                                <input class="cell-input"
+                                                       type="@GetCellInputType(column)"
+                                                       step="@GetCellInputStep(column)"
+                                                       value="@row.GetValue(column.Id)"
+                                                       @oninput="eventArgs => row.SetValue(column.Id, eventArgs.Value?.ToString())" />
+                                            }
+                                        </td>
+                                    }
+                                    <td class="row-actions">
+                                        <button class="icon-button danger" type="button" title="Удалить строку" @onclick="() => DeletePreviewRow(row.Id)">x</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="data-section json-section">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">ConceptDefCollectionDto</p>
+                        <h2>JSON</h2>
+                    </div>
+                    <div class="button-row">
+                        <button class="text-button" type="button" @onclick="FillImportFromExport">В импорт</button>
+                        <button class="text-button" type="button" @onclick="ResetSample">Пример</button>
+                    </div>
+                </div>
+
+                <div class="json-grid">
+                    <label>
+                        Экспорт
+                        <textarea class="json-box" readonly value="@ExportJson"></textarea>
+                    </label>
+                    <label>
+                        Импорт
+                        <textarea class="json-box" @bind="importJson" @bind:event="oninput"></textarea>
+                    </label>
+                </div>
+                <button class="text-button primary" type="button" @onclick="ImportJson">Применить JSON</button>
+            </section>
+        }
+    </main>
+
+    <aside class="inspector">
+        @if (CurrentConcept is not null)
+        {
+            <section class="inspector-section">
+                <p class="eyebrow">Концепт</p>
+                <form @onsubmit="SaveConcept" @onsubmit:preventDefault="true">
+                    <label for="conceptName">Название</label>
+                    <input id="conceptName" @bind="conceptName" @bind:event="oninput" />
+                    <div class="button-row">
+                        <button class="text-button primary" type="submit">Сохранить</button>
+                        <button class="text-button danger" type="button" @onclick="DeleteCurrentConcept">Удалить</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="inspector-section">
+                <p class="eyebrow">@GetEditorTitle()</p>
+                <form @onsubmit="SaveAttribute" @onsubmit:preventDefault="true">
+                    <label for="attributeName">Название</label>
+                    <input id="attributeName" placeholder="totalScore" @bind="editAttributeName" @bind:event="oninput" />
+
+                    <label for="attributeType">Тип</label>
+                    <select id="attributeType" @bind="editAttributeType">
+                        @foreach (var type in ConceptTypeNames.All)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+
+                    <label class="check-line">
+                        <input type="checkbox" @bind="editAttributeIsComputable" />
+                        <span>Вычисляемый</span>
+                    </label>
+
+                    <label for="attributeExpression">Формула</label>
+                    <input id="attributeExpression"
+                           placeholder="labScore + examScore"
+                           disabled="@(!editAttributeIsComputable)"
+                           @bind="editAttributeExpression"
+                           @bind:event="oninput" />
+
+                    <div class="button-row">
+                        <button class="text-button primary" type="submit">@GetAttributeSubmitText()</button>
+                        @if (EditingAttribute is not null)
+                        {
+                            <button class="text-button" type="button" @onclick="StartNewAttribute">Новый</button>
+                        }
+                    </div>
+                </form>
+            </section>
+        }
+    </aside>
+</div>
+
+@code {
+    private string newConceptName = string.Empty;
+    private string conceptName = string.Empty;
+    private string? editingAttributeId;
+    private string editAttributeName = string.Empty;
+    private string editAttributeType = ConceptTypeNames.String;
+    private bool editAttributeIsComputable;
+    private string? editAttributeExpression;
+    private string importJson = string.Empty;
+    private string? statusMessage;
+    private bool statusIsError;
+
+    private ConceptEditorModel? CurrentConcept => Workspace.SelectedConcept;
+
+    private AttributeEditorModel? EditingAttribute =>
+        CurrentConcept?.Attributes.FirstOrDefault(attribute => attribute.Id == editingAttributeId);
+
+    private IReadOnlyList<string> ValidationErrors => Workspace.ValidateCurrentModel();
+
+    private string ExportJson => Workspace.ExportJson();
+
+    protected override void OnInitialized()
+    {
+        SyncConceptForm();
+        BeginEditAttribute(CurrentConcept?.Attributes.FirstOrDefault());
+    }
+
+    private void CreateConcept()
+    {
+        TryRun(() =>
+        {
+            var concept = Workspace.AddConcept(newConceptName);
+            concept.EnsureRows(3);
+            newConceptName = string.Empty;
+            SyncConceptForm();
+            StartNewAttribute();
+            statusMessage = $"Концепт \"{concept.Name}\" добавлен.";
+        });
+    }
+
+    private void SelectConcept(string conceptId)
+    {
+        Workspace.SelectConcept(conceptId);
+        SyncConceptForm();
+        BeginEditAttribute(CurrentConcept?.Attributes.FirstOrDefault());
+        ClearStatus();
+    }
+
+    private void SaveConcept()
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            Workspace.UpdateConceptName(CurrentConcept, conceptName);
+            SyncConceptForm();
+            statusMessage = "Концепт сохранен.";
+        });
+    }
+
+    private void DeleteCurrentConcept()
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            Workspace.RemoveConcept(CurrentConcept.Id);
+            SyncConceptForm();
+            BeginEditAttribute(CurrentConcept?.Attributes.FirstOrDefault());
+            statusMessage = "Концепт удален.";
+        });
+    }
+
+    private void SaveAttribute()
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            if (EditingAttribute is null)
+            {
+                var attribute = Workspace.AddAttribute(
+                    CurrentConcept,
+                    editAttributeName,
+                    editAttributeType,
+                    editAttributeIsComputable,
+                    editAttributeExpression);
+
+                BeginEditAttribute(attribute);
+                statusMessage = $"Столбец \"{attribute.Name}\" добавлен.";
+                return;
+            }
+
+            Workspace.UpdateAttribute(
+                CurrentConcept,
+                EditingAttribute,
+                editAttributeName,
+                editAttributeType,
+                editAttributeIsComputable,
+                editAttributeExpression);
+
+            BeginEditAttribute(EditingAttribute);
+            statusMessage = "Столбец сохранен.";
+        });
+    }
+
+    private void DeleteAttribute(string attributeId)
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            Workspace.RemoveAttribute(CurrentConcept, attributeId);
+            BeginEditAttribute(CurrentConcept.Attributes.FirstOrDefault());
+            statusMessage = "Столбец удален.";
+        });
+    }
+
+    private void AddPreviewRow()
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            Workspace.AddRow(CurrentConcept);
+            statusMessage = "Строка добавлена.";
+        });
+    }
+
+    private void DeletePreviewRow(string rowId)
+    {
+        TryRun(() =>
+        {
+            if (CurrentConcept is null)
+            {
+                return;
+            }
+
+            Workspace.RemoveRow(CurrentConcept, rowId);
+            statusMessage = "Строка удалена.";
+        });
+    }
+
+    private void ImportJson()
+    {
+        if (Workspace.TryImportJson(importJson))
+        {
+            SyncConceptForm();
+            BeginEditAttribute(CurrentConcept?.Attributes.FirstOrDefault());
+            statusIsError = false;
+            statusMessage = "JSON применен.";
+            return;
+        }
+
+        statusIsError = true;
+        statusMessage = Workspace.LastError;
+    }
+
+    private void FillImportFromExport()
+    {
+        importJson = ExportJson;
+        ClearStatus();
+    }
+
+    private void ResetSample()
+    {
+        Workspace.LoadSample();
+        SyncConceptForm();
+        BeginEditAttribute(CurrentConcept?.Attributes.FirstOrDefault());
+        statusIsError = false;
+        statusMessage = "Пример загружен.";
+    }
+
+    private void BeginEditAttribute(AttributeEditorModel? attribute)
+    {
+        editingAttributeId = attribute?.Id;
+        editAttributeName = attribute?.Name ?? string.Empty;
+        editAttributeType = attribute?.Type ?? ConceptTypeNames.String;
+        editAttributeIsComputable = attribute?.IsComputable ?? false;
+        editAttributeExpression = attribute?.Expression ?? string.Empty;
+    }
+
+    private void StartNewAttribute()
+    {
+        BeginEditAttribute(null);
+        ClearStatus();
+    }
+
+    private void SyncConceptForm()
+    {
+        conceptName = CurrentConcept?.Name ?? string.Empty;
+    }
+
+    private void TryRun(Action action)
+    {
+        try
+        {
+            statusIsError = false;
+            Workspace.ClearError();
+            action();
+        }
+        catch (InvalidOperationException exception)
+        {
+            statusIsError = true;
+            statusMessage = exception.Message;
+        }
+    }
+
+    private void ClearStatus()
+    {
+        statusIsError = false;
+        statusMessage = null;
+    }
+
+    private string GetConceptButtonClass(ConceptEditorModel concept)
+    {
+        return concept.Id == CurrentConcept?.Id ? "concept-button active" : "concept-button";
+    }
+
+    private string GetAttributeRowClass(AttributeEditorModel attribute)
+    {
+        return attribute.Id == EditingAttribute?.Id ? "selected-row" : string.Empty;
+    }
+
+    private string GetStatusClass()
+    {
+        return statusIsError ? "notice error" : "notice success";
+    }
+
+    private static string GetAttributeMode(AttributeEditorModel attribute)
+    {
+        return attribute.IsComputable ? "Формула" : "Значение";
+    }
+
+    private string GetEditorTitle()
+    {
+        return EditingAttribute is null ? "Новый столбец" : "Столбец";
+    }
+
+    private string GetAttributeSubmitText()
+    {
+        return EditingAttribute is null ? "Добавить" : "Сохранить";
+    }
+
+    private string GetComputedPreview(
+        ConceptEditorModel concept,
+        int rowIndex,
+        AttributeEditorModel attribute)
+    {
+        return Workspace.GetComputedCellText(concept, rowIndex, attribute);
+    }
+
+    private static string GetCellInputType(AttributeEditorModel attribute)
+    {
+        return attribute.Type switch
+        {
+            ConceptTypeNames.Int or ConceptTypeNames.Float => "number",
+            ConceptTypeNames.DateTime => "date",
+            _ => "text"
+        };
+    }
+
+    private static string? GetCellInputStep(AttributeEditorModel attribute)
+    {
+        return attribute.Type switch
+        {
+            ConceptTypeNames.Int => "1",
+            ConceptTypeNames.Float => "0.01",
+            _ => null
+        };
+    }
+}

@@ -1,0 +1,214 @@
+@page "/statements/constructor"
+@using LMSDashboardBlazor.Services.Statements
+@inject StatementService StatementService
+
+<section class="welcome-section statements-compact-hero">
+    <div class="welcome-content statements-hero-content">
+        <div>
+            <p class="statements-eyebrow">Конструктор ведомости</p>
+            <h1>Создание ведомости</h1>
+            <p class="welcome-text">Генерация строк студентов, разделов, экзамена и расчет итогов.</p>
+        </div>
+        <a class="statement-action-link secondary" href="/statements/view">Открыть текущую ведомость</a>
+    </div>
+</section>
+
+<section class="dashboard-card">
+    <div class="card-header">
+        <h2><i class="fas fa-sliders"></i> Параметры</h2>
+    </div>
+
+    <div class="card-content">
+        <div class="statement-config-grid">
+            <label class="statement-field">
+                <span>Количество студентов</span>
+                <input type="number" min="1" class="statement-input" @bind="studentCount" />
+            </label>
+
+            <label class="statement-field">
+                <span>Количество разделов</span>
+                <input type="number" min="1" class="statement-input" @bind="sectionCount" />
+            </label>
+
+            <label class="statement-field">
+                <span>Название экзамена</span>
+                <input type="text" class="statement-input" @bind="subjectName" />
+            </label>
+
+            <button class="statement-primary-button" type="button" @onclick="GenerateTable">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                Создать ведомость
+            </button>
+        </div>
+    </div>
+</section>
+
+@if (Students.Any())
+{
+    <section class="dashboard-card statement-table-card">
+        <div class="card-header">
+            <h2><i class="fas fa-table"></i> Таблица баллов</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="statement-table-wrap">
+                <table class="statement-table editable">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            @for (var i = 0; i < sectionCount; i++)
+                            {
+                                <th>Раздел @(i + 1)</th>
+                            }
+                            <th>@subjectName</th>
+                            <th>Сумма</th>
+                            <th>Оценка</th>
+                            <th>Код</th>
+                            <th>ECTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Students.Count; i++)
+                        {
+                            var studentIndex = i;
+                            <tr>
+                                <td>
+                                    <input value="@Students[studentIndex].FullName"
+                                           class="statement-cell-input wide"
+                                           @oninput="e => UpdateName(studentIndex, e.Value?.ToString())" />
+                                </td>
+
+                                @for (var j = 0; j < sectionCount; j++)
+                                {
+                                    var sectionIndex = j;
+                                    <td>
+                                        <input type="number"
+                                               value="@Students[studentIndex].Sections[sectionIndex]"
+                                               class="statement-cell-input"
+                                               @oninput="e => UpdateSection(studentIndex, sectionIndex, e.Value?.ToString())" />
+                                    </td>
+                                }
+
+                                <td>
+                                    <input type="number"
+                                           value="@Students[studentIndex].Exam"
+                                           class="statement-cell-input"
+                                           @oninput="e => UpdateExam(studentIndex, e.Value?.ToString())" />
+                                </td>
+                                <td>@Students[studentIndex].Total</td>
+                                <td>@Students[studentIndex].Mark</td>
+                                <td>@Students[studentIndex].Code</td>
+                                <td>@Students[studentIndex].ECTS</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="statement-save-row">
+                <span class="statement-save-message">@saveMessage</span>
+                <button class="statement-secondary-button" type="button" @onclick="GenerateTable">Сбросить таблицу</button>
+                <button class="statement-primary-button" type="button" @onclick="SaveStatement">Сохранить ведомость</button>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private int studentCount = 5;
+    private int sectionCount = 2;
+    private string subjectName = "Экзамен";
+    private List<TempStudent> Students = new();
+    private string? saveMessage;
+
+    protected override void OnInitialized()
+    {
+        GenerateTable();
+    }
+
+    private void GenerateTable()
+    {
+        studentCount = Math.Max(1, studentCount);
+        sectionCount = Math.Max(1, sectionCount);
+
+        Students = Enumerable.Range(1, studentCount)
+            .Select(i => new TempStudent
+            {
+                FullName = $"Студент {i}",
+                Sections = Enumerable.Repeat(0, sectionCount).ToList()
+            })
+            .ToList();
+
+        for (var i = 0; i < Students.Count; i++)
+        {
+            Recalculate(i);
+        }
+
+        saveMessage = null;
+    }
+
+    private void UpdateName(int studentIndex, string? value)
+    {
+        Students[studentIndex].FullName = value ?? string.Empty;
+    }
+
+    private void UpdateSection(int studentIndex, int sectionIndex, string? value)
+    {
+        Students[studentIndex].Sections[sectionIndex] = ParseScore(value);
+        Recalculate(studentIndex);
+    }
+
+    private void UpdateExam(int studentIndex, string? value)
+    {
+        Students[studentIndex].Exam = ParseScore(value);
+        Recalculate(studentIndex);
+    }
+
+    private void Recalculate(int studentIndex)
+    {
+        var student = Students[studentIndex];
+        student.Total = student.Sections.Sum() + student.Exam;
+
+        var grade = StatementService.CalculateGrade(student.Total);
+        student.Mark = grade.Text;
+        student.Code = grade.Code;
+        student.ECTS = grade.ECTS;
+    }
+
+    private void SaveStatement()
+    {
+        var statement = new StatementModel
+        {
+            Name = subjectName,
+            Subjects = Enumerable.Range(1, sectionCount).Select(i => $"Раздел {i}").ToList(),
+            Students = Students.Select(s => new StudentModel
+            {
+                FullName = s.FullName,
+                Sections = s.Sections.ToList(),
+                Exam = s.Exam,
+                SectionSum = s.Sections.Sum(),
+                Total = s.Total,
+                Mark = s.Mark,
+                Code = s.Code,
+                ECTS = s.ECTS
+            }).ToList()
+        };
+
+        StatementService.SetStatement(statement);
+        saveMessage = "Ведомость успешно сохранена.";
+    }
+
+    private static int ParseScore(string? value)
+        => int.TryParse(value, out var parsed) ? parsed : 0;
+
+    private class TempStudent
+    {
+        public string FullName { get; set; } = string.Empty;
+        public List<int> Sections { get; set; } = new();
+        public int Exam { get; set; }
+        public int Total { get; set; }
+        public string Mark { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string ECTS { get; set; } = string.Empty;
+    }
+}

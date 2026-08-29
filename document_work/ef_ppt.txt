@@ -1,0 +1,176 @@
+SLIDES=15
+--- SLIDE 1 ---
+Title 2: Разработка пользовательского веб-интерфейсадля подсистемы учета посещений
+Текст 2: Ефименко Н.П.
+Текст 3: Б23-504
+Текст 4: Рословцев В.В.
+TextBox 1: Москва, 2026
+--- SLIDE 2 ---
+Title 1: Реферат
+Slide Number Placeholder 3: 1
+Text 7: 29
+Text 8: страниц без задания
+Text 9: 14
+Text 10: таблиц
+Text 11: 10
+Text 12: рисунков
+Text 13: 21
+Text 14: источник
+Text 15: 2
+Text 16: приложения
+Text 17: Ключевая идея |  | Компонентный интерфейс связывает выбор занятия, электронный журнал, локальное редактирование и сводные показатели.
+Text 17: Стек |  |  | Blazor · C# · Razor | JSON · REST API | .NET | адаптивная верстка
+--- SLIDE 3 ---
+Title 1: Актуальность работы
+Slide Number Placeholder 3: 2
+Объект 2: |  |
+Rectangle 61: Риск ошибки
+Rectangle 63: Скорость контроля
+Rectangle 66: 1
+Rectangle 68: 2
+Rectangle 70: 3
+Rectangle 72: 4
+Rectangle 74: 5
+Rectangle 76: 5
+Rectangle 78: 1
+Rectangle 79: Бумажный | журнал
+Rectangle 81: 4
+Rectangle 83: 3
+Rectangle 84: Локальная | таблица
+Rectangle 86: 4
+Rectangle 88: 2
+Rectangle 89: Разрозненные | системы
+Rectangle 91: 2
+Rectangle 93: 5
+Rectangle 94: Единый | интерфейс
+Rectangle 96: Проблема
+Rectangle 97: Ежедневная отметка отделена от проверяемой статистики: данные приходится повторно сводить.
+Rectangle 99: Требование
+Rectangle 100: Один рабочий экран должен связать занятие, группу, отметки, ошибки и сводные показатели.
+Rectangle 102: Практический эффект
+Rectangle 103: Меньше повторного ввода, быстрее контроль полноты журнала, прозрачнее причины отклонений.
+--- SLIDE 4 ---
+Title 1: Цель УИР
+Slide Number Placeholder 3: 3
+Rectangle 5: Цель
+Rectangle 6: Спроектировать и реализовать прототип веб-интерфейса учета посещений
+Rectangle 8: 1
+Rectangle 9: Анализ | ролей и форм
+Rectangle 12: 2
+Rectangle 13: Модели | и правила
+Rectangle 16: 3
+Rectangle 17: Архитектура
+Rectangle 20: 4
+Rectangle 21: Основные | сценарии
+Rectangle 24: 5
+Rectangle 25: Проверка | прототипа
+--- SLIDE 5 ---
+Title 1: Результаты анализа
+Slide Number Placeholder 3: 4
+Объект 2: |  |
+Rectangle 5: Массовый ввод
+Rectangle 7: Обзор периода
+Rectangle 9: Мобильный экран
+Rectangle 12: 1
+Rectangle 14: 2
+Rectangle 16: 3
+Rectangle 18: 4
+Rectangle 20: 5
+Rectangle 22: 5
+Rectangle 24: 3
+Rectangle 26: 2
+Rectangle 27: Электронный | журнал
+Rectangle 29: 2
+Rectangle 31: 5
+Rectangle 33: 3
+Rectangle 34: Календарь
+Rectangle 36: 3
+Rectangle 38: 4
+Rectangle 40: 5
+Rectangle 41: Карточки | занятий
+Rectangle 43: 1
+Rectangle 45: 5
+Rectangle 47: 4
+Rectangle 48: Сводная | панель
+Rectangle 50: Основной сценарий
+Rectangle 80: Электронный журнал - массовое заполнение занятия
+Rectangle 82: Дополнение
+Rectangle 83: Календарь и карточки помогают найти занятие, a сводка проверяет полноту
+Rectangle 85: Проектное решение
+Rectangle 86: Ядро прототипа - журнал, остальные формы - развитие
+--- SLIDE 6 ---
+Title 1: Задачи УИР
+Slide Number Placeholder 3: 5
+Rectangle 8: 1
+Rectangle 9: Исследовать роли и предметную область
+Rectangle 12: 2
+Rectangle 13: Сравнить формы представления
+Rectangle 16: 3
+Rectangle 17: Формализовать статусы и проверки
+Rectangle 20: 4
+Rectangle 21: Спроектировать компоненты и навигацию
+Rectangle 24: 5
+Rectangle 25: Реализовать журнал и личную историю
+Rectangle 27: 6
+Rectangle 28: Проверить сценарии и определить развитие
+--- SLIDE 7 ---
+Title 1: Результаты моделирования: роли определяют сценарии
+Slide Number Placeholder 3: 6
+Объект 2: |  |
+--- SLIDE 8 ---
+Slide Number Placeholder 3: 7
+Rectangle 7: Опоздание
+Rectangle 8: Статус Late требует положительное количество минут
+Rectangle 10: Уважительная причина
+Rectangle 11: Статус Excused требует поясняющий комментарий
+Rectangle 13: Сохранение
+Rectangle 14: Любая ошибка строки блокирует запись журнала в JSON
+Заголовок 1: Результаты моделирования: статус задаёт правила ввода
+--- SLIDE 9 ---
+Title 1: Результаты проектирования
+Slide Number Placeholder 3: 8
+Объект 2: |
+--- SLIDE 10 ---
+Slide Number Placeholder 3: 9
+Rectangle 7: Реализовано
+Rectangle 8: / — редактор концептов | /attendance - журнал преподавателя | ?view=student - личная история студента
+Rectangle 10: Проектируется
+Rectangle 11: REST API · полноценные роли · курсы и группы · | администрирование · | конфликты версий
+Заголовок 1: Результаты проектирования
+--- SLIDE 11 ---
+Title 1: Результаты реализации
+Slide Number Placeholder 3: 10
+Объект 2: |  |
+Rectangle 9: 1
+Rectangle 10: Контекст занятия
+Rectangle 12: 2
+Rectangle 13: Поиск и фильтр
+Rectangle 15: 3
+Rectangle 16: Массовая отметка
+Rectangle 18: 4
+Rectangle 19: Сводка и состояние
+--- SLIDE 12 ---
+Slide Number Placeholder 3: 11
+Rectangle 7: Студент: история и показатели без редактирования
+Rectangle 8: Сохранение: UI → AttendanceWorkspace → System.Text.Json → attendance-data.json
+Заголовок 1: Результаты реализации
+--- SLIDE 13 ---
+Title 1: Заключение
+Slide Number Placeholder 3: 12
+Rectangle 10: 1
+Rectangle 11: Сформированы модели занятий, студентов и отметок
+Rectangle 13: 2
+Rectangle 14: Реализован журнал с поиском, фильтром и массовой операцией
+Rectangle 16: 3
+Rectangle 17: Добавлены сводные показатели и личная история
+Rectangle 19: 4
+Rectangle 20: Настроены валидация, отмена и локальное JSON-сохранение
+Rectangle 22: Следующий этап
+Rectangle 23: REST API | Аутентификация и роли | Админ-раздел | Аудит и конфликты версий
+--- SLIDE 14 ---
+Title 1: Список литературы
+Content Placeholder 2: Microsoft. Blazor Documentation [Электронный ресурс]. - URL: https://learn.microsoft.com/en-us/aspnet/core/blazor/ (дата обращения: 07.06.2026). | Roslovtsev V.V. Architecture for Modular Type System for Information Systems Based on Relational-Applicative Technologies // Procedia Computer Science. - 2018. - Vol. 123. - P. 393-402. | Microsoft. ASP.NET Core Razor components [Электронный ресурс]. URL: https://learn.microsoft.com/aspnet/core/blazor/components/ (дата обращения: 05.06.2026). | Microsoft. Call a web API from an ASP.NET Core Blazor app [Электронный ресурс]. URL: https://learn.microsoft.com/aspnet/core/blazor/call-web-api (дата обращения: 02.06.2026). | Bray T. The JavaScript Object Notation (JSON) Data Interchange Format [Электронный ресурс]. - RFC 8259. - URL: https://www.rfc-editor.org/rfc/rfc8259 (дата обращения: 08.06.2026). | MudBlazor. Blazor Component Library Documentation [Электронный ресурс]. URL: https://mudblazor.com/ (дата обращения: 18.06.2026). |  |
+Slide Number Placeholder 3: 13
+--- SLIDE 15 ---
+Slide Number Placeholder 3: 14
+TextBox 4: Спасибо за внимание!

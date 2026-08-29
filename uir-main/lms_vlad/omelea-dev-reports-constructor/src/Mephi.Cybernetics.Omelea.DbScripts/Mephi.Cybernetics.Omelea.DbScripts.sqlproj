@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>Mephi.Cybernetics.Omelea.DbScripts</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{c8ee4b83-29cb-4a2d-ac90-9abd476f9403}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql160DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>Mephi.Cybernetics.Omelea.DbScripts</RootNamespace>
+    <AssemblyName>Mephi.Cybernetics.Omelea.DbScripts</AssemblyName>
+    <ModelCollation>1033, CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="Person\" />
+    <Folder Include="Person\Tables\" />
+    <Folder Include="Organization\" />
+    <Folder Include="Organization\Tables\" />
+    <Folder Include="Education\" />
+    <Folder Include="Education\Tables\" />
+    <Folder Include="CourseReport\" />
+    <Folder Include="CourseReport\Tables\" />
+    <Folder Include="CourseLabs\" />
+    <Folder Include="CourseLabs\Tables\" />
+    <Folder Include="Course\" />
+    <Folder Include="Course\Tables\" />
+    <Folder Include="Content\" />
+    <Folder Include="Content\Tables\" />
+    <Folder Include="Organization\Views\" />
+    <Folder Include="Security\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Person\Tables\PersonEmploymentsInformal.sql" />
+    <Build Include="Person\Tables\PersonEmployments.sql" />
+    <Build Include="Person\Tables\PersonPhones.sql" />
+    <Build Include="Person\Tables\PersonEmails.sql" />
+    <Build Include="Person\Tables\Persons.sql" />
+    <Build Include="Organization\Tables\Students.sql" />
+    <Build Include="Organization\Tables\OrgUnits.sql" />
+    <Build Include="Organization\Tables\Positions.sql" />
+    <Build Include="Education\Tables\EducationalGroups.sql" />
+    <Build Include="Education\Tables\EducationalPrograms.sql" />
+    <Build Include="Education\Tables\Specialties.sql" />
+    <Build Include="Education\Tables\CourseCurators.sql" />
+    <Build Include="Education\Tables\CourseTasks.sql" />
+    <Build Include="Education\Tables\CourseTaskTypes.sql" />
+    <Build Include="Education\Tables\CourseProgramModules.sql" />
+    <Build Include="Education\Tables\CourseAuthors.sql" />
+    <Build Include="Education\Tables\CoursePrograms.sql" />
+    <Build Include="Education\Tables\Courses.sql" />
+    <Build Include="CourseReport\Tables\AppraisalListColumns.sql" />
+    <Build Include="CourseReport\Tables\AppraisalScales.sql" />
+    <Build Include="CourseReport\Tables\AppraisalLists.sql" />
+    <Build Include="CourseReport\Tables\AppraisalScalesEnumRanges.sql" />
+    <Build Include="CourseReport\Tables\AppraisalListMarksHistory.sql" />
+    <Build Include="CourseReport\Tables\AppraisalListMarks.sql" />
+    <Build Include="CourseReport\Tables\ColumnOperations.sql" />
+    <Build Include="CourseReport\Tables\AppraisalListColumnsDependencies.sql" />
+    <Build Include="CourseReport\Tables\AppraisalListColumnsCompute.sql" />
+    <Build Include="CourseReport\Tables\EnumValuePartialOrdering.sql" />
+    <Build Include="CourseReport\Tables\AppraisalScalesEnumValues.sql" />
+    <Build Include="CourseReport\Tables\AppraisalScalesLinear.sql" />
+    <Build Include="CourseReport\Tables\ValueFormats.sql" />
+    <Build Include="CourseLabs\Tables\StudentCourseTaskCriteria.sql" />
+    <Build Include="CourseLabs\Tables\StudentVisitDetailComments.sql" />
+    <Build Include="CourseLabs\Tables\StudentVisitDetails.sql" />
+    <Build Include="CourseLabs\Tables\TaskCriteria.sql" />
+    <Build Include="CourseLabs\Tables\StudentVisits.sql" />
+    <Build Include="CourseLabs\Tables\CourseTaskOptionRelations.sql" />
+    <Build Include="CourseLabs\Tables\Relations.sql" />
+    <Build Include="CourseLabs\Tables\CourseTaskOptionValues.sql" />
+    <Build Include="CourseLabs\Tables\StudentCourseTaskOptions.sql" />
+    <Build Include="CourseLabs\Tables\CourseTaskOptions.sql" />
+    <Build Include="CourseLabs\Tables\StudentCourseTasks.sql" />
+    <Build Include="CourseLabs\Tables\StudentIndCourseInstanceModuleTaskRels.sql" />
+    <Build Include="CourseLabs\Tables\CourseInstanceModuleTaskCriteria.sql" />
+    <Build Include="Course\Tables\CourseInstanceStudentTasks.sql" />
+    <Build Include="Course\Tables\CourseInstanceStudents.sql" />
+    <Build Include="Course\Tables\CourseInstances.sql" />
+    <Build Include="Course\Tables\CourseInstanceModules.sql" />
+    <Build Include="Course\Tables\CourseInstanceEdPrograms.sql" />
+    <Build Include="Course\Tables\CourseInstanceModuleTasks.sql" />
+    <Build Include="Course\Tables\Courses.sql" />
+    <Build Include="Content\Tables\ContentScopes.sql" />
+    <Build Include="Organization\Views\InstructorsView.sql" />
+    <Build Include="Security\Person.sql" />
+    <Build Include="Security\Organization.sql" />
+    <Build Include="Security\Education.sql" />
+    <Build Include="Security\CourseReport.sql" />
+    <Build Include="Security\CourseLabs.sql" />
+    <Build Include="Security\Course.sql" />
+    <Build Include="Security\Content.sql" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,172 @@
+@page "/forms"
+@inject NavigationManager NavigationManager
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+@inject LMSDashboardBlazor.Services.LmsAccessContextService AccessContextService
+@inject LMSDashboardBlazor.Services.Forms.FormSchemaService FormSchemaService
+@using LMSDashboardBlazor.Models
+@using LMSDashboardBlazor.Models.Forms
+
+@if (!_ready)
+{
+    <section class="forms-page-shell">
+        <div class="forms-page-header compact">
+            <h1>Подготовка рабочего пространства форм...</h1>
+            <p>Проверяем авторизацию и загружаем семантические схемы.</p>
+        </div>
+    </section>
+}
+else if (!_isAuthenticated)
+{
+    <section class="forms-page-shell">
+        <div class="forms-page-header compact">
+            <h1>Требуется авторизация</h1>
+            <p>Перенаправляем на отдельную страницу входа.</p>
+        </div>
+    </section>
+}
+else
+{
+    <section class="forms-page-shell">
+        <div class="forms-page-header">
+            <div>
+                <p class="eyebrow">Динамическая генерация экранных форм</p>
+                <h1>Рабочее пространство экранных форм</h1>
+    
+            </div>
+
+            <div class="forms-header-badges">
+                <span class="meta-pill">@(_username ?? "пользователь")</span>
+                <span class="meta-pill">@ActiveRoles.Count ролей</span>
+                <span class="meta-pill">@Catalog.Count схем</span>
+            </div>
+        </div>
+
+        <div class="forms-workspace-grid">
+            <aside class="forms-sidebar-panel">
+                <div class="sidebar-panel-header">
+                    <h2>Семантические схемы</h2>
+                    <p>Выберите объект LMS, для которого нужно автоматически построить экранную форму.</p>
+                </div>
+
+                <div class="schema-list">
+                    @foreach (var item in Catalog)
+                    {
+                        <button class="schema-card @(SelectedSchemaId == item.Id ? "selected" : null)"
+                                @onclick="() => SelectSchemaAsync(item.Id)">
+                            <div class="schema-card-icon">
+                                <i class="@item.IconCssClass"></i>
+                            </div>
+                            <div class="schema-card-body">
+                                <h3>@item.Title</h3>
+                                <p>@item.Description</p>
+                                <span class="schema-entity">@item.EntityName</span>
+                            </div>
+                        </button>
+                    }
+                </div>
+
+                <div class="sidebar-panel-header role-summary-header">
+                    <h2>Контекстные роли</h2>
+                   
+                </div>
+
+                <div class="role-summary-grid">
+                    @foreach (var context in AccessContexts)
+                    {
+                        <div class="role-summary-card">
+                            <div class="role-summary-top">
+                                <strong>@context.CourseCode</strong>
+                                <span class="role-badge @GetRoleBadgeClass(context.Role)">@GetRoleLabel(context.Role)</span>
+                            </div>
+                            <p>@context.CourseName</p>
+                        </div>
+                    }
+                </div>
+            </aside>
+
+            <div class="forms-main-panel">
+                @if (CurrentSchema is null)
+                {
+                    <div class="dynamic-form-empty large">
+                        <i class="fas fa-window-maximize"></i>
+                        <p>Не удалось загрузить выбранную схему формы.</p>
+                    </div>
+                }
+                else
+                {
+                    <DynamicFormRenderer Schema="CurrentSchema" ActiveRoleLabels="ActiveRoles" />
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private bool _ready;
+    private bool _isAuthenticated;
+    private string? _username;
+    private SemanticFormSchema? CurrentSchema;
+    private string? SelectedSchemaId;
+    private IReadOnlyList<FormSchemaCatalogItem> Catalog = Array.Empty<FormSchemaCatalogItem>();
+    private IReadOnlyList<CourseAccessContext> AccessContexts = Array.Empty<CourseAccessContext>();
+    private HashSet<string> ActiveRoles = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _isAuthenticated = await AuthSession.IsAuthenticatedAsync();
+        if (!_isAuthenticated)
+        {
+            _ready = true;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/login", replace: true);
+            return;
+        }
+
+        _username = await AuthSession.GetUsernameAsync();
+        AccessContexts = AccessContextService.GetAccessContexts(_username);
+        ActiveRoles = AccessContexts
+            .Select(context => GetRoleLabel(context.Role))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Catalog = FormSchemaService.GetCatalog();
+        SelectedSchemaId = Catalog.FirstOrDefault()?.Id;
+        if (!string.IsNullOrWhiteSpace(SelectedSchemaId))
+        {
+            CurrentSchema = await FormSchemaService.GetSchemaAsync(SelectedSchemaId);
+        }
+
+        _ready = true;
+        StateHasChanged();
+    }
+
+    private async Task SelectSchemaAsync(string schemaId)
+    {
+        SelectedSchemaId = schemaId;
+        CurrentSchema = await FormSchemaService.GetSchemaAsync(schemaId);
+    }
+
+    private static string GetRoleLabel(LmsCourseRole role) => role switch
+    {
+        LmsCourseRole.Admin => "Администратор",
+        LmsCourseRole.Student => "Студент",
+        LmsCourseRole.Teacher => "Преподаватель",
+        LmsCourseRole.Assistant => "Ассистент",
+        LmsCourseRole.Curator => "Куратор",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleBadgeClass(LmsCourseRole role) => role switch
+    {
+        LmsCourseRole.Admin => "admin",
+        LmsCourseRole.Student => "student",
+        LmsCourseRole.Teacher => "teacher",
+        LmsCourseRole.Assistant => "assistant",
+        LmsCourseRole.Curator => "curator",
+        _ => string.Empty
+    };
+}

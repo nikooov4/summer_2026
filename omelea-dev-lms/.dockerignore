@@ -1,0 +1,44 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs
+*.log
+**/audit.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NuGet
+**/packages/
+*.nupkg
+*.snupkg
+
+# Test results
+**/TestResults/
+**/test-results/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~

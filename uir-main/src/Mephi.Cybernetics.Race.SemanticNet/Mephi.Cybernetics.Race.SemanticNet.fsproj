@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;netcoreapp3.1;net4.7.2;net5.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <DocumentationFile>..\..\bin\Debug\Mephi.Cybernetics.Race.SemanticNet.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
+    <OutputPath>..\..\bin\Release</OutputPath>
+    <DocumentationFile>..\..\bin\Release\Mephi.Cybernetics.Race.SemanticNet.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>

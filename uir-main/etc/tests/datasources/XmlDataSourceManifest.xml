@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <meta-data>
+    <table name="Speaker">
+      <properties>
+        <property name="Name" type="1"></property>
+        <property name="Post" type="1"></property>
+        <property name="Organization" type="4"></property>
+      </properties>
+      <references>
+        <reference type="N:1">
+          <source-field>Organization</source-field>
+          <target-table>Organization</target-table>
+        </reference>
+      </references>
+      <mapping>
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <target-class>Mephi.Cybernetics.Race.DataAccessExp.Entities.Speaker</target-class>
+        <map source="Name" target="Name"></map>
+        <map source="Post" target="Post"></map>
+        <map source="Organization" target="WorkingPlace"></map>
+      </mapping>
+    </table>
+    <table name="Report">
+      <properties>
+        <property name="Title" type="1"></property>
+        <property name="Theme" type="1"></property>
+        <property name="Speaker" type="2"></property>
+      </properties>
+      <references>
+        <reference type="1:1">
+          <source-field>Speaker</source-field>
+          <target-table>Speaker</target-table>
+        </reference>
+      </references>
+      <mapping>
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <target-class>Mephi.Cybernetics.Race.DataAccessExp.Entities.Report</target-class>
+        <map source="Title" target="Title"></map>
+        <map source="Theme" target="Theme"></map>
+        <map source="Speaker" target="Speaker"></map>
+      </mapping>
+    </table>
+    <table name="Organization">
+      <properties>
+        <property name="Name" type="1"></property>
+        <property name="City" type="1"></property>
+      </properties>
+      <mapping>
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <target-class>Mephi.Cybernetics.Race.DataAccessExp.Entities.Organization</target-class>
+        <map source="Name" target="Name"></map>
+        <map source="City" target="City"></map>
+      </mapping>
+    </table>
+    <types>
+      <type id="1">
+        <assembly></assembly>
+        <namespace></namespace>
+        <name>System.String</name>
+      </type>
+      <type id="2">
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <namespace>Entities</namespace>
+        <name>Mephi.Cybernetics.Race.DataAccessExp.Entities.Speaker</name>
+      </type>
+      <type id="3">
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <namespace>Entities</namespace>
+        <name>Mephi.Cybernetics.Race.DataAccessExp.Entities.Report</name>
+      </type>
+      <type id="4">
+        <assembly>Mephi.Cybernetics.Race.DataAccessExp</assembly>
+        <namespace>Entities</namespace>
+        <name>Mephi.Cybernetics.Race.DataAccessExp.Entities.Organization</name>
+      </type>
+    </types>
+  </meta-data>
+  <entities>
+    <entity name="Organization" id="1">
+      <property name="Name">Mephi</property>
+      <property name="City">Moscow</property>
+    </entity>
+    <entity name="Speaker" id="1">
+      <property name="Name">Nikita</property>
+      <property name="Post">Student</property>
+      <property name="Organization">1</property>
+    </entity>
+  </entities>
+</root>

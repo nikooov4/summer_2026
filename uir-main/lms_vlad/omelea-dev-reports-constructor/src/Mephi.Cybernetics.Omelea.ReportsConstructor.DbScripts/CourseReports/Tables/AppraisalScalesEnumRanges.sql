@@ -1,0 +1,11 @@
+﻿-- CREATE TABLE [CourseReport].[AppraisalScalesEnumRanges] (
+--     [ComputeColumnID] UNIQUEIDENTIFIER NOT NULL,
+--     [ScaleID]         UNIQUEIDENTIFIER NOT NULL,
+--     [Code]            INT              NOT NULL,
+--     [RangeStart]      INT              NOT NULL,
+--     [RangeEnd]        INT              NOT NULL,
+--     PRIMARY KEY CLUSTERED ([ComputeColumnID] ASC, [ScaleID] ASC, [Code] ASC),
+--     FOREIGN KEY ([ComputeColumnID]) REFERENCES [CourseReport].[AppraisalListColumnsCompute] ([ColumnID]),
+--     FOREIGN KEY ([ScaleID], [Code]) REFERENCES [CourseReport].[AppraisalScalesEnumValues] ([ScaleID], [Code])
+-- );
+

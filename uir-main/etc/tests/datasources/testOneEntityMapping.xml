@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<hook select="true" update="true" delete="true" insert="true" >
+  <table-name name="SCs" />
+  <schema name="User1" />
+  <properties>
+    <property name="Name" column-name="sName" />
+    <property name="Parent" column-name="idParent" />
+  </properties>
+</hook>

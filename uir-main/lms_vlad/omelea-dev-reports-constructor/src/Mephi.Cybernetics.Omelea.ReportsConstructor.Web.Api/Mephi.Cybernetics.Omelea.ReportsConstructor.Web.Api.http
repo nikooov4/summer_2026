@@ -1,0 +1,82 @@
+@HostAddress = http://localhost:5000
+
+GET {{HostAddress}}/api/ApprList/definitions
+Accept: application/json
+
+###
+
+GET {{HostAddress}}/api/ApprList/marks/Lab1
+Accept: application/json
+
+###
+GET {{HostAddress}}/api/ApprList/students
+Accept: application/json
+
+###
+
+PUT {{HostAddress}}/api/ApprList/definitions
+Content-Type: application/json
+
+{
+  "concepts": [
+    {
+      "name": "Lab1",
+      "attributes": [
+        {
+          "name": "testsScore",
+          "type": "Int",
+          "isComputable": false,
+          "expression": null
+        },
+        {
+          "name": "theoryScore",
+          "type": "Int",
+          "isComputable": false,
+          "expression": null
+        },
+        {
+          "name": "maxScore",
+          "type": "Int",
+          "isComputable": true,
+          "expression": "30"
+        },
+        {
+          "name": "score",
+          "type": "Int",
+          "isComputable": true,
+          "expression": "testsScore + theoryScore"
+        }
+      ]
+    }
+  ]
+}
+
+###
+
+PUT {{HostAddress}}/api/ApprList/marks/Lab1
+Content-Type: application/json
+
+{
+  "columns": {
+    "testsScore": [
+      {
+        "studentId": "4af14b87-0dc4-4ac7-917e-419c66569a85",
+        "value": 20
+      },
+      {
+        "studentId": "e9cff799-6fd3-42c3-88e2-c7ce019f9a87",
+        "value": 20
+      }
+    ],
+    "theoryScore": [
+      {
+        "studentId": "4af14b87-0dc4-4ac7-917e-419c66569a85",
+        "value": 20
+      },
+      {
+        "studentId": "e9cff799-6fd3-42c3-88e2-c7ce019f9a87",
+        "value": 20
+      }
+    ]
+  }
+}

@@ -1,0 +1,402 @@
+@page "/"
+@inject NavigationManager NavigationManager
+@inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
+@inject LMSDashboardBlazor.Services.LmsAccessContextService AccessContextService
+@using LMSDashboardBlazor.Models
+
+@if (!_ready)
+{
+    <section class="welcome-section">
+        <div class="welcome-content">
+            <h1>Проверка сессии...</h1>
+            <p class="welcome-text">Проверяем авторизацию пользователя.</p>
+        </div>
+    </section>
+}
+else if (!_isAuthenticated)
+{
+    <section class="welcome-section">
+        <div class="welcome-content">
+            <h1>Требуется авторизация</h1>
+            <p class="welcome-text">Перенаправляем на отдельную страницу входа.</p>
+        </div>
+    </section>
+}
+else
+{
+<section id="home" class="welcome-section">
+    <div class="welcome-content">
+        <h1>Добро пожаловать, @(_username ?? "пользователь")</h1>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
+                <div class="stat-info">
+                    <h3>@AccessContexts.Count</h3>
+                    <p>Контекстов доступа</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-shield"></i></div>
+                <div class="stat-info">
+                    <h3>@DistinctRolesCount</h3>
+                    <p>Активных ролей</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                <div class="stat-info">
+                    <h3>@TotalPermissions</h3>
+                    <p>Назначенных прав</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+                <div class="stat-info">
+                    <h3>100%</h3>
+                    <p>Средний балл</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<div class="dashboard-grid">
+    <section class="dashboard-card access-card">
+        <div class="card-header">
+            <h2><i class="fas fa-user-lock"></i> Контекстные роли и права</h2>
+        </div>
+        <div class="card-content">
+            <div class="access-contexts">
+                @foreach (var context in AccessContexts)
+                {
+                    <div class="access-context-item">
+                        <div class="access-context-top">
+                            <div>
+                                <h3>@context.CourseCode</h3>
+                                <p>@context.CourseName</p>
+                            </div>
+                            <span class="role-badge @GetRoleBadgeClass(context.Role)">@GetRoleLabel(context.Role)</span>
+                        </div>
+                        <p class="access-context-summary">@context.Description</p>
+                        <div class="permission-chips">
+                            @foreach (var permission in context.Permissions)
+                            {
+                                <span class="permission-chip">@permission</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section id="calendar" class="dashboard-card calendar-card">
+        <div class="card-header">
+            <h2><i class="fas fa-calendar-alt"></i> Календарь</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="calendar-header">
+                <button class="calendar-nav" @onclick="PrevMonth">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <h3 class="calendar-title">@MonthYear</h3>
+
+                <button class="calendar-nav" @onclick="NextMonth">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="calendar-grid">
+                @foreach (var day in Calendar)
+                {
+                    <div class="@GetDayClass(day)">
+                        @day.Day
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section id="courses" class="dashboard-card courses-card">
+        <div class="card-header">
+            <h2><i class="fas fa-book-open"></i> Мои курсы</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="courses-grid">
+                @foreach (var context in AccessContexts)
+                {
+                    <div class="course-card">
+                        <div class="course-icon"><i class="fas fa-layer-group"></i></div>
+                        <div class="course-info">
+                            <h3>@context.CourseCode</h3>
+                            <p class="course-progress">@context.CourseName</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width:@GetProgressWidth(context.Role)"></div>
+                            </div>
+                            <span class="course-status active">Роль: @GetRoleLabel(context.Role)</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section id="tests" class="dashboard-card tests-card">
+        <div class="card-header">
+            <h2><i class="fas fa-clipboard-list"></i> Тесты и контрольные</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="test-category">
+                <h3>Предстоящие тесты</h3>
+
+                <div class="test-item">
+                    <div class="test-info">
+                        <h4>Тест по дискретной математике</h4>
+                        <p>Дата: 20.10.2024 | Время: 10:00 | Длительность: 90 мин</p>
+                    </div>
+                    <button class="btn-primary">Начать</button>
+                </div>
+
+                <div class="test-item">
+                    <div class="test-info">
+                        <h4>Тест по параллельному программированию</h4>
+                        <p>Дата: 25.10.2024 | Время: 14:00 | Длительность: 120 мин</p>
+                    </div>
+                    <button class="btn-secondary">Подготовка</button>
+                </div>
+            </div>
+
+            <div class="test-category">
+                <h3>Результаты</h3>
+
+                <div class="result-item">
+                    <span>СТИС – Лабораторная 3</span>
+                    <span class="result-score passed">100/100</span>
+                </div>
+
+                <div class="result-item">
+                    <span>Дискретная математика – Контрольная</span>
+                    <span class="result-score passed">100/100</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card disciplines-card">
+        <div class="card-header">
+            <h2><i class="fas fa-list-ul"></i> Дисциплины</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="discipline-item">
+                <h3>СТИС</h3>
+                <p>Преподаватель: Сергей Петров</p>
+                <div class="discipline-stats">
+                    <span>Лекции: 32</span>
+                    <span>Семинары: 16</span>
+                    <span>Лаб. работы: 12</span>
+                </div>
+            </div>
+
+            <div class="discipline-item">
+                <h3>Дискретная математика</h3>
+                <p>Преподаватель: Андрей Морозов</p>
+                <div class="discipline-stats">
+                    <span>Лекции: 28</span>
+                    <span>Семинары: 14</span>
+                    <span>Лаб. работы: 8</span>
+                </div>
+            </div>
+
+            <div class="discipline-item">
+                <h3>BICA</h3>
+                <p>Преподаватель: Ольга Соколова</p>
+                <div class="discipline-stats">
+                    <span>Лекции: 24</span>
+                    <span>Семинары: 12</span>
+                    <span>Лаб. работы: 10</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card assignments-card">
+        <div class="card-header">
+            <h2><i class="fas fa-tasks"></i> Домашние задания</h2>
+        </div>
+
+        <div class="card-content">
+            <div class="assignment-item urgent">
+                <h4>Домашняя работа 1</h4>
+                <p>СТИС | Срок сдачи: 16.12.2025</p>
+                <span class="status-badge urgent">Срочно</span>
+            </div>
+
+            <div class="assignment-item">
+                <h4>Лабораторная работа по лямбда исчислениям</h4>
+                <p>Параллельное программирование | Срок сдачи: 20.12.2025</p>
+                <span class="status-badge normal">В процессе</span>
+            </div>
+
+            <div class="assignment-item completed">
+                <h4>Контрольная работа</h4>
+                <p>Дискретная математика | Сдано: 10.12.2024</p>
+                <span class="status-badge completed">Выполнено</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card grades-card">
+        <div class="card-header">
+            <h2><i class="fas fa-chart-bar"></i> Оценки</h2>
+        </div>
+
+        <div class="card-content grades-layout">
+            <div class="grade-summary">
+                <div class="grade-circle">
+                    <span class="grade-value">5.0</span>
+                    <span class="grade-label">Средний балл</span>
+                </div>
+            </div>
+
+            <div class="grade-list">
+                <div class="grade-item">
+                    <span>СТИС</span><strong>5</strong>
+                </div>
+                <div class="grade-item">
+                    <span>Дискретная математика</span><strong>5</strong>
+                </div>
+                <div class="grade-item">
+                    <span>Параллельное программирование</span><strong>5</strong>
+                </div>
+                <div class="grade-item">
+                    <span>BICA</span><strong>5</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+}
+
+@code {
+    private bool _ready;
+    private bool _isAuthenticated;
+    private string? _username;
+
+    DateTime Current = DateTime.Today;
+    List<DateTime> Calendar = new();
+    private IReadOnlyList<CourseAccessContext> AccessContexts = Array.Empty<CourseAccessContext>();
+
+    private int DistinctRolesCount => AccessContexts.Select(x => x.Role).Distinct().Count();
+    private int TotalPermissions => AccessContexts.Sum(x => x.Permissions.Count);
+
+    string MonthYear =>
+        Current.ToString("MMMM yyyy", new System.Globalization.CultureInfo("ru-RU"));
+
+    protected override void OnInitialized()
+    {
+        BuildCalendar();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _isAuthenticated = await AuthSession.IsAuthenticatedAsync();
+        if (!_isAuthenticated)
+        {
+            _ready = true;
+            StateHasChanged();
+            NavigationManager.NavigateTo("/login", replace: true);
+            return;
+        }
+
+        _username = await AuthSession.GetUsernameAsync();
+        AccessContexts = AccessContextService.GetAccessContexts(_username);
+        _ready = true;
+        StateHasChanged();
+    }
+
+    void PrevMonth()
+    {
+        Current = Current.AddMonths(-1);
+        BuildCalendar();
+    }
+
+    void NextMonth()
+    {
+        Current = Current.AddMonths(1);
+        BuildCalendar();
+    }
+
+    void BuildCalendar()
+    {
+        Calendar.Clear();
+
+        var firstDay = new DateTime(Current.Year, Current.Month, 1);
+
+        int dayOfWeek = (int)firstDay.DayOfWeek;
+        if (dayOfWeek == 0) dayOfWeek = 7;
+
+        var start = firstDay.AddDays(-(dayOfWeek - 1));
+
+        for (int i = 0; i < 42; i++)
+            Calendar.Add(start.AddDays(i));
+    }
+
+    string GetDayClass(DateTime date)
+    {
+        var cls = "calendar-day";
+
+        if (date.Month != Current.Month)
+            cls += " other-month";
+
+        if (date.Date == DateTime.Today)
+            cls += " today";
+
+        return cls;
+    }
+
+    private static string GetRoleLabel(LmsCourseRole role) => role switch
+    {
+        LmsCourseRole.Admin => "Администратор",
+        LmsCourseRole.Student => "Студент",
+        LmsCourseRole.Teacher => "Преподаватель",
+        LmsCourseRole.Assistant => "Ассистент",
+        LmsCourseRole.Curator => "Куратор",
+        _ => role.ToString()
+    };
+
+    private static string GetRoleBadgeClass(LmsCourseRole role) => role switch
+    {
+        LmsCourseRole.Admin => "admin",
+        LmsCourseRole.Student => "student",
+        LmsCourseRole.Teacher => "teacher",
+        LmsCourseRole.Assistant => "assistant",
+        LmsCourseRole.Curator => "curator",
+        _ => string.Empty
+    };
+
+    private static string GetProgressWidth(LmsCourseRole role) => role switch
+    {
+        LmsCourseRole.Admin => "100%",
+        LmsCourseRole.Student => "72%",
+        LmsCourseRole.Teacher => "88%",
+        LmsCourseRole.Assistant => "64%",
+        LmsCourseRole.Curator => "55%",
+        _ => "50%"
+    };
+}

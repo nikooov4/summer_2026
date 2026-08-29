@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7C929C53-F5FE-43C1-AE27-42D804BFDB0D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Mephi.Cybernetics.Race.DataAccess</RootNamespace>
+    <AssemblyName>Mephi.Cybernetics.Race.DataAccess</AssemblyName>
+	<TargetFrameworks>netstandard2.1;netcoreapp3.1;net4.7.2;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" BuildVersion_BuildVersioningStyle="None.None.Increment.YearDayOfYear" BuildVersion_AssemblyInfoFilename="AssemblyInfo.cs" BuildVersion_StartDate="2006/11/1" />
+    </VisualStudio>
+  </ProjectExtensions>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform" Version="3.6.0" />
+    <PackageReference Include="NHibernate" Version="5.3.8" />
+    <PackageReference Include="System.CodeDom" Version="5.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HostEnvironments\Mephi.Cybernetics.Race.Core.Host.fsproj">
+      <Project>{da2fd2da-8347-47c2-b43d-08eb382cc404}</Project>
+      <Name>Mephi.Cybernetics.Race.Core.Host</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Mephi.Cybernetics.Race.Core\Mephi.Cybernetics.Race.Core.csproj">
+      <Project>{095b14ea-99bb-4dae-aad3-26ad4b5d6784}</Project>
+      <Name>Mephi.Cybernetics.Race.Core</Name>
+    </ProjectReference>  </ItemGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

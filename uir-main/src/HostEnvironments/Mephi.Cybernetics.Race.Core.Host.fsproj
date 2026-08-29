@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>da2fd2da-8347-47c2-b43d-08eb382cc404</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>HostEnvironments</RootNamespace>
+    <AssemblyName>Mephi.Cybernetics.Race.Core.Host</AssemblyName>
+    <Name>Mephi.Cybernetics.Race.Core.Host</Name>
+    <TargetFrameworks>netstandard2.1;netcoreapp3.1;net4.7.2;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>..\..\bin\Debug\HostEnvironments.XML</DocumentationFile>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>..\..\bin\Release</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>..\..\bin\Release\HostEnvironments.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Import Project="..\packages\SharpDX.2.6.3\build\SharpDX.targets" Condition="Exists('..\packages\SharpDX.2.6.3\build\SharpDX.targets')" />
+  <!--Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\SharpDX.2.6.3\build\SharpDX.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SharpDX.2.6.3\build\SharpDX.targets'))" />
+  </Target-->
+  <ItemGroup>
+    <Content Include="ComputeShaders\test_shader.hlsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Compile Include="_TypeSystem.fs" />
+    <Compile Include="Copy of Interfaces.fs" />
+    <Compile Include="TypeSystemInterfaces.fs" />
+    <Compile Include="TffInterfaces.fs" />
+    <Compile Include="Substitution.fs" />
+    <Compile Include="Application.fs" />
+    <Compile Include="TypeSystem.fs" />
+    <Compile Include="Tff.fs" />
+    <Compile Include="Reduction.fs" />
+    <Compile Include="Combinators.fs" />
+    <Compile Include="Math.fs" />
+    <Compile Include="ChurchNumerals.fs" />
+    <Compile Include="DocumentObjects.fs" />
+    <Compile Include="TermStringification.fs" />
+    <Compile Include="AssemblyInfo.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

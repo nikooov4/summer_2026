@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.AttestationAppraisalList">
+    <Position X="0.5" Y="0.5" Width="3" />
+    <AssociationLine Name="Attestation" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedToPoint="true">
+      <Path>
+        <Point X="3.5" Y="1.562" />
+        <Point X="5.5" Y="1.562" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Part2" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedToPoint="true">
+      <Path>
+        <Point X="3.5" Y="1.875" />
+        <Point X="5.5" Y="1.875" />
+      </Path>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAYAAAAEBAAggAACAAAAAAQAAgAAAAAAAAAEAAAACAQ=</HashCode>
+      <FileName>Models\AttestationAppraisalList.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Attestation" />
+      <Property Name="Part1" />
+      <Property Name="Part2" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.MarksCountAppraisalList">
+    <Position X="1" Y="5.5" Width="3.25" />
+    <Members>
+      <Property Name="AllMarks" Hidden="true" />
+    </Members>
+    <AssociationLine Name="Fives" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3.25" Y="5.5" />
+        <Point X="3.25" Y="3.269" />
+        <Point X="3.604" Y="3.269" Type="JumpStart" />
+        <Point X="3.771" Y="3.269" Type="JumpEnd" />
+        <Point X="3.854" Y="3.269" Type="JumpStart" />
+        <Point X="4.021" Y="3.269" Type="JumpEnd" />
+        <Point X="4.139" Y="3.269" Type="JumpStart" />
+        <Point X="4.306" Y="3.269" Type="JumpEnd" />
+        <Point X="5.5" Y="3.269" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Threes" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3.688" Y="5.5" />
+        <Point X="3.688" Y="2.938" />
+        <Point X="3.854" Y="2.937" Type="JumpStart" />
+        <Point X="4.021" Y="2.938" Type="JumpEnd" />
+        <Point X="4.139" Y="2.937" Type="JumpStart" />
+        <Point X="4.306" Y="2.938" Type="JumpEnd" />
+        <Point X="5.5" Y="2.938" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Twos" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.223" Y="5.5" />
+        <Point X="4.223" Y="2.625" />
+        <Point X="5.5" Y="2.625" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Fours" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3.938" Y="5.5" />
+        <Point X="3.938" Y="2.312" />
+        <Point X="5.5" Y="2.312" />
+      </Path>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAIEAAAGBBAggAAAEAAAAAQAAAAAAAAAAAAEAAAACIA=</HashCode>
+      <FileName>Models\AttestationAppraisalList.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Fives" />
+      <Property Name="Threes" />
+      <Property Name="Twos" />
+      <Property Name="Fours" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumn">
+    <Position X="5.5" Y="0.5" Width="4" />
+    <AssociationLine Name="Scale" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalScale" FixedFromPoint="true">
+      <Path>
+        <Point X="7.438" Y="3.334" />
+        <Point X="7.438" Y="4.5" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="Marks" Type="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListMark">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.1" Y="-0.346" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAAKAAAEQAAggAACAAIAQAQAAAAAgAAEAAQAAAAAAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Computation" />
+      <Property Name="Scale" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="Marks" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListMark">
+    <Position X="10.5" Y="2" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAIACAgAAAAAAEAABAAAAAAAAAAAgAEAQAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalScale">
+    <Position X="5.75" Y="4.5" Width="4.25" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAggAAAAAAAAAQAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="LinearScale" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalScaleLinear">
+    <Position X="11" Y="4.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAgAAAIAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalScalesEnumValue">
+    <Position X="7.25" Y="6.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAgAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalListColumnsCompute">
+    <Position X="10.75" Y="0.75" Width="4" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACAgAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="OperationID" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="Ranges" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.InterAppraisalScalesEnumRange">
+    <Position X="11.5" Y="6.5" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAACAAAAAIAAAAABAAAAAAA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="EnumValue" />
+    </ShowAsAssociation>
+  </Class>
+  <Enum Name="Mephi.Cybernetics.Race.AppraisalListsMapping.Models.Operations">
+    <Position X="14.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\InterModels.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

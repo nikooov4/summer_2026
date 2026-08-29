@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+
+  <types>
+    <type id="">
+      <assembly></assembly>
+      <name></name>
+      <hook select="true" update="true" delete="true" insert="true" >
+        <table-name name="" />
+        <properties>
+          <property name="" column-name="" />
+          <property name="">
+            <!-- is mtm -->
+            <linking-table left-join-field="" right-join-field="" />
+          </property>
+        </properties>
+      </hook>
+    </type>
+  </types>
+
+
+  <meta-data>
+    <data-table name="">
+      
+      <!--primaryKey>
+        <attribute name=""/>
+        <attribute name=""/>
+        <attribute name=""/>
+      </primaryKey>
+      <potentialKeys>
+        <key>
+          <attribute name=""/>
+          <attribute name=""/>
+        </key>
+        <key>
+          <attribute name=""/>
+          <attribute name=""/>
+        </key>
+      </potentialKeys-->
+      
+      <attributes>
+        <attribute name="" type=""/>
+      </attributes>
+      
+      <references>
+        <reference target="" type="1:1">
+          <source>
+            <attribute name=""/>
+            <attribute name=""/>
+          </source>
+          <target>
+            <attribute name=""/>
+            <attribute name=""/>
+          </target>
+        </reference>
+        <reference target="" type="1:N">
+          <source>
+            <attribute name=""/>
+            <attribute name=""/>
+          </source>
+          <target>
+            <attribute name=""/>
+            <attribute name=""/>
+          </target>
+        </reference>
+        <reference target="" type="M:N">
+          <source>
+            <attribute name=""/>
+            <attribute name=""/>
+          </source>
+          <target>
+            <attribute name=""/>
+            <attribute name=""/>
+          </target>
+          <linking-table name="">
+            <sourceJoin>
+              <attribute name=""/>
+              <attribute name=""/>
+            </sourceJoin>
+            <targetJoin>
+              <attribute name=""/>
+              <attribute name=""/>
+            </targetJoin>
+          </linking-table>
+        </reference>
+      </references>
+    </data-table>
+  </meta-data>
+  
+  
+  
+  
+</root>

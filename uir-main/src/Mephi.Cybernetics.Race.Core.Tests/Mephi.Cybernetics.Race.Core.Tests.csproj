@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.1;netcoreapp3.1;net4.7.2;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<RootNamespace>Mephi.Cybernetics.Race.Core.Tests</RootNamespace>
+		<AssemblyName>Mephi.Cybernetics.Race.Core.Tests</AssemblyName>
+		<LangVersion>latest</LangVersion>
+		<!--EnablePreviewFeatures>true</EnablePreviewFeatures--> <!--for abstract static in interfaces-->
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Mephi.Cybernetics.Race.Core\Mephi.Cybernetics.Race.Core.csproj" />
+	</ItemGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>full</DebugType>
+		<Optimize>false</Optimize>
+		<OutputPath>..\..\bin\Debug\Tests\</OutputPath>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DebugType>pdbonly</DebugType>
+		<Optimize>true</Optimize>
+		<OutputPath>..\..\bin\Release\Tests\</OutputPath>
+		<DefineConstants>TRACE</DefineConstants>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+
+
+</Project>

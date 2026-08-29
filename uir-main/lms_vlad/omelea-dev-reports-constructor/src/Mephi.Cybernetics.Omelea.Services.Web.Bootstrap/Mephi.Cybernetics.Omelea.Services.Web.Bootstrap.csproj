@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>Mephi.Cybernetics.Omelea.Services.Web.Bootstrap</RootNamespace>
+		<AssemblyName>Omelea.Services.Web.Bootstrap</AssemblyName>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>5a6b9499-3368-4db5-95c0-32f011408453</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="System.ServiceModel.Primitives" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\race2\src\Mephi.Cybernetics.Race.Core\Mephi.Cybernetics.Race.Core.csproj" />
+	  <ProjectReference Include="..\Mephi.Cybernetics.Omelea.Core\Mephi.Cybernetics.Omelea.Core.csproj" />
+	</ItemGroup>
+
+</Project>
+

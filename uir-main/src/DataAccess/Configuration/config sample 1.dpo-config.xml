@@ -1,0 +1,9 @@
+﻿<config>
+	<Entities>
+		<Entity name="QuizChannel">
+			<ClrAttributes>
+				<Attribute name="Table" parameters="Channels,ServiceID,Equals,4ef2a218-38be-4ed4-a136-f615b7e46e4d"/>
+			</ClrAttributes>
+		</Entity>
+	</Entities>
+</config>

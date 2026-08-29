@@ -1,0 +1,67 @@
+@page "/admins"
+@inject HttpClient Http
+@using Mephi.Cyber.AuthService.Core.Models
+<PageTitle>Admins</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Admins</MudText>
+<MudText Class="mb-5">Administrators registered in the system</MudText>
+<MudButton Class="mb-3" Href="admins/add-admin" Variant="Variant.Filled" Color="Color.Primary">Create Admin</MudButton>
+@if (admins == null)
+{
+    <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+}
+else
+{
+<MudTable Items="admins" Hover="true" SortLabel="Sort By" Elevation="0" Filter="new Func<Admin,bool>(FilterFunc1)">
+    <ToolBarContent>
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Admin, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd Class="py-1" DataLabel="Name">@context.Name</MudTd>
+        <MudTd Class="py-1" DataLabel="Email">@context.Email</MudTd>
+        <MudTd Class="py-2"><MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Error" @onclick="() =>Remove(context.Name)">Delete</MudButton></MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+    </PagerContent>
+</MudTable>
+}
+
+
+@code {
+
+    private Admin[]? admins;
+
+    public async Task Remove(string name)
+    {
+        var dict = new Dictionary<string, string>();
+        dict.Add("name", name);
+        await Http.PostAsync("admin/admin/delete", new FormUrlEncodedContent(dict));
+        admins = await Http.GetFromJsonAsync<Admin[]>("admin/admin/list");
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        admins = await Http.GetFromJsonAsync<Admin[]>("admin/admin/list");
+    }
+    
+    private string searchString1 = "";
+    private bool FilterFunc1(Admin element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(Admin element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!string.IsNullOrEmpty(element.Email) && element.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+}
+

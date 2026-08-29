@@ -1,0 +1,74 @@
+﻿@inject IDialogService DialogService
+
+<MudTable T="CourseInstance" Items="@CourseInstances" Hover="true" Breakpoint="Breakpoint.Sm" OnRowClick="RowClickEvent" Style="box-shadow:none;">
+    <HeaderContent>
+        <MudTh>Год</MudTh>
+        <MudTh>Создан</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Год">@context.Year</MudTd>
+        <MudTd DataLabel="Создан">@context.CreatedAt.ToString("dd MMM yyyy")</MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (_expandedCourseId == context.CourseId)
+        {
+            <MudTr>
+                <td colspan="4">
+                    <MudCard Elevation="0">
+                        <MudCardHeader Class="pb-0">
+                            <CardHeaderContent>
+                                <div class="d-flex justify-space-between">
+                                    <MudText Typo="Typo.body1">Прочтения курса</MudText>
+                                    <MudButton @onclick="() => OpenDialogAsync(context)" Variant="Variant.Filled" Color="Color.Primary">Добавить</MudButton>
+                                </div>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent Class="pa-0">
+                            <AppraisalsTable AppraisalLists="@context.AppraisalLists" />
+                        </MudCardContent>
+                    </MudCard>
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>
+</MudTable>
+
+@code {
+    [Parameter]
+    public IEnumerable<CourseInstance> CourseInstances { get; set; }
+
+    private Guid? _expandedCourseId;
+
+
+    private void RowClickEvent(TableRowClickEventArgs<CourseInstance> tableRowClickEventArgs)
+    {
+        if (tableRowClickEventArgs.Item == null)
+        {
+            return;
+        }
+        var courseId = tableRowClickEventArgs.Item.CourseId;
+
+        if (_expandedCourseId == courseId)
+        {
+            _expandedCourseId = null;
+        }
+        else
+        {
+            _expandedCourseId = courseId;
+        }
+    }
+
+    private async Task OpenDialogAsync(CourseInstance courseInstance)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Large };
+        var parameters = new DialogParameters<AddAppraisalDialog> { { x => x.CourseInstance, courseInstance } };
+
+        var dialog =  DialogService.Show<AddAppraisalDialog>("Add Appraisal Dialog", parameters, options);
+
+        var result = await dialog.Result;
+
+        StateHasChanged();
+
+    }
+
+}

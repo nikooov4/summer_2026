@@ -1,0 +1,128 @@
+@using LMSDashboardBlazor.Models.Forms
+
+<div class="dynamic-field span-@GetSpan(Field.Span)">
+    <label class="dynamic-label" for="@Field.Key">
+        @Field.Label
+        @if (Field.Required)
+        {
+            <span class="required-mark">*</span>
+        }
+    </label>
+
+    @switch (NormalizedType)
+    {
+        case "textarea":
+            <textarea id="@Field.Key"
+                      class="dynamic-input dynamic-textarea"
+                      placeholder="@Field.Placeholder"
+                      disabled="@Disabled"
+                      readonly="@Field.ReadOnly"
+                      @oninput="HandleTextChanged">@GetStringValue()</textarea>
+            break;
+
+        case "number":
+            <input id="@Field.Key"
+                   class="dynamic-input"
+                   type="number"
+                   placeholder="@Field.Placeholder"
+                   value="@GetStringValue()"
+                   disabled="@Disabled"
+                   readonly="@Field.ReadOnly"
+                   @oninput="HandleTextChanged" />
+            break;
+
+        case "date":
+            <input id="@Field.Key"
+                   class="dynamic-input"
+                   type="date"
+                   value="@GetStringValue()"
+                   disabled="@Disabled"
+                   readonly="@Field.ReadOnly"
+                   @onchange="HandleTextChanged" />
+            break;
+
+        case "checkbox":
+            <label class="checkbox-shell">
+                <input id="@Field.Key"
+                       type="checkbox"
+                       checked="@GetBoolValue()"
+                       disabled="@Disabled"
+                       @onchange="HandleCheckboxChanged" />
+                <span>Отметить значение</span>
+            </label>
+            break;
+
+        case "select":
+            <select id="@Field.Key"
+                    class="dynamic-input"
+                    value="@GetStringValue()"
+                    disabled="@Disabled"
+                    @onchange="HandleTextChanged">
+                <option value="">Выберите значение</option>
+                @foreach (var option in Field.Options)
+                {
+                    <option value="@option.Value">@option.Label</option>
+                }
+            </select>
+            break;
+
+        default:
+            <input id="@Field.Key"
+                   class="dynamic-input"
+                   type="text"
+                   placeholder="@Field.Placeholder"
+                   value="@GetStringValue()"
+                   disabled="@Disabled"
+                   readonly="@Field.ReadOnly"
+                   @oninput="HandleTextChanged" />
+            break;
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Field.HelpText))
+    {
+        <div class="field-help">@Field.HelpText</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FormFieldSchema Field { get; set; } = new();
+    [Parameter] public object? Value { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<object?> ValueChanged { get; set; }
+
+    private string NormalizedType => (Field.Type ?? "text").Trim().ToLowerInvariant();
+
+    private int GetSpan(int requestedSpan)
+    {
+        if (requestedSpan <= 0)
+        {
+            return 6;
+        }
+
+        return Math.Min(12, requestedSpan);
+    }
+
+    private string GetStringValue() => Value?.ToString() ?? Field.DefaultValue ?? string.Empty;
+
+    private bool GetBoolValue()
+    {
+        if (Value is bool boolValue)
+        {
+            return boolValue;
+        }
+
+        return bool.TryParse(GetStringValue(), out var parsed) && parsed;
+    }
+
+    private Task HandleTextChanged(ChangeEventArgs args)
+        => ValueChanged.InvokeAsync(args.Value?.ToString());
+
+    private Task HandleCheckboxChanged(ChangeEventArgs args)
+    {
+        var boolValue = args.Value is bool directBool
+            ? directBool
+            : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+
+        return ValueChanged.InvokeAsync(boolValue);
+    }
+}

@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [Course]
+    AUTHORIZATION [dbo];
+

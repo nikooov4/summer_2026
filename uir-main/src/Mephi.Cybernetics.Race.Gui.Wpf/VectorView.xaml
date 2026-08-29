@@ -1,0 +1,80 @@
+﻿<UserControl x:Class="Mephi.Cybernetics.Race.Gui.Wpf.VectorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:Mephi.Cybernetics.Race.Gui.Wpf"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    
+    
+<!--     <Grid HorizontalAlignment="Stretch"> -->
+<!--         <Grid.ColumnDefinitions> -->
+<!--             <ColumnDefinition></ColumnDefinition> -->
+<!--             <ColumnDefinition></ColumnDefinition> -->
+<!--             <ColumnDefinition></ColumnDefinition> -->
+<!--         </Grid.ColumnDefinitions> -->
+<!--         <Grid.RowDefinitions> -->
+<!--             <RowDefinition></RowDefinition> -->
+<!--             <RowDefinition></RowDefinition> -->
+<!--         </Grid.RowDefinitions> -->
+<!--         <Label Grid.Row="0" Grid.Column="0" Content="X"></Label> -->
+<!--         <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding Path=PositionX, Mode=TwoWay}" Margin="0,5"></TextBox> -->
+<!--         <Label Grid.Row="0" Grid.Column="1" Content="Y"></Label> -->
+<!--         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Path=PositionY, Mode=TwoWay}" Margin="0,5"></TextBox> -->
+<!--         <Label Grid.Row="0" Grid.Column="2" Content="Z"></Label> -->
+<!--         <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Path=PositionZ, Mode=TwoWay}" Margin="0,5"></TextBox> -->
+<!--     </Grid> -->
+<!-- </UserControl> -->
+
+<!-- <UserControl.DataContext> -->
+<!--     <wpf:VectorView /> -->
+<!-- </UserControl.DataContext> -->
+<!-- <Grid HorizontalAlignment="Stretch"> -->
+<!--     <Grid.ColumnDefinitions> -->
+<!--         <ColumnDefinition /> -->
+<!--         <ColumnDefinition /> -->
+<!--         <ColumnDefinition /> -->
+<!--     </Grid.ColumnDefinitions> -->
+<!--     <Grid.RowDefinitions> -->
+<!--         <RowDefinition /> -->
+<!--         <RowDefinition /> -->
+<!--     </Grid.RowDefinitions> -->
+<!--     <Label Grid.Row="0" Grid.Column="0" Content="X" /> -->
+     <!-- <TextBox Grid.Row="1" Grid.Column="0"  Text="{Binding RelativeSource={Binding Path=X, Mode=TwoWay}}" Margin="0,5" /> -->
+     <!-- <Label Grid.Row="0" Grid.Column="1" Content="Y" /> -->
+     <!-- <TextBox Grid.Row="1" Grid.Column="1" -->
+     <!--          Text="{Binding RelativeSource={Binding Path=Y, Mode=TwoWay}}" Margin="0,5" /> -->
+     <!-- <Label Grid.Row="0" Grid.Column="2" Content="Z" /> -->
+     <!-- <TextBox Grid.Row="1" Grid.Column="2" -->
+     <!--          Text="{Binding RelativeSource={Binding Path=Z, Mode=TwoWay}}" Margin="0,5" /> -->
+<!-- </Grid> -->
+<!-- </UserControl> -->
+
+
+<Grid HorizontalAlignment="Stretch">
+
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition />
+        <ColumnDefinition />
+        <ColumnDefinition />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+        <RowDefinition />
+        <RowDefinition />
+    </Grid.RowDefinitions>
+    
+    <Label Grid.Row="0" Grid.Column="1" Content="Y" />
+    <Label Grid.Row="0" Grid.Column="0" Content="X" />
+    <TextBox Name="Box1" Grid.Row="1" Grid.Column="0"
+             Text="{Binding Path=.VectorX , Mode=TwoWay}"
+             Margin="0,5" />
+    <Label Grid.Row="0" Grid.Column="1" Content="Y" />
+    <TextBox Name="Box2" Grid.Row="1" Grid.Column="1"
+             Text="{Binding Path=VectorY, Mode=TwoWay}" Margin="0,5" />
+    <Label Grid.Row="0" Grid.Column="2" Content="Z" />
+    <TextBox Name="Box3" Grid.Row="1" Grid.Column="2"
+             Text="{Binding  Path=VectorZ, Mode=TwoWay}" Margin="0,5" />
+</Grid>
+</UserControl>

@@ -1,0 +1,42 @@
+concept Lab1
+{
+    testsScore: Int,
+    theoryScore: Int,
+    score: Int => testsScore + theoryScore,
+    maxScore : Int => 30
+}
+
+concept Lab2
+{   
+    codeQualityScore: Int,
+    numberOfFeatures: Int, 
+    score: Int => codeQualityScore + numberOfFeatures * 10,
+    maxScore : Int => 40
+}
+
+concept Total
+{
+    lab1Score: Int => Lab1.score,
+    lab2Score: Int => Lab2.score,
+    sum: Int => lab1Score + lab2Score,
+    score : Int => sum / (Lab1.maxScore + Lab2.maxScore) * maxScore,
+    maxScore : Int => 100
+}
+
+concept SumDoubled
+{
+    addition: Int,
+    score: Int => Lab1.score * 2 + Lab2.score * 2 + addition
+}
+
+concept Exam
+{
+    score: Int => Exam2.score,
+    amougs: Int => Exam2.amogus
+}
+
+concept Exam2
+{
+    amogus: Int,
+    score: Int => SumDoubled.score
+}

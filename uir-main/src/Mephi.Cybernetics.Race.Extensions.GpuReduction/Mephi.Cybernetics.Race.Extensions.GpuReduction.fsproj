@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+		<SchemaVersion>2.0</SchemaVersion>
+		<ProjectGuid>7ca37d5c-fdff-46cb-8254-beb88833137c</ProjectGuid>
+		<OutputType>Library</OutputType>
+		<RootNamespace>Mephi.Cybernetics.Race.Extensions.GpuReduction</RootNamespace>
+		<AssemblyName>Mephi.Cybernetics.Race.Extensions.GpuReduction</AssemblyName>
+		<TargetFrameworks>netstandard2.1;netcoreapp3.1;net4.7.2;net5.0</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		<Name>Mephi.Cybernetics.Race.Extensions.GpuReduction</Name>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<Tailcalls>false</Tailcalls>
+		<OutputPath>..\..\bin\Debug\</OutputPath>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<WarningLevel>3</WarningLevel>
+		<DocumentationFile>bin\$(Configuration)\$(AssemblyName).XML</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+		<DebugType>pdbonly</DebugType>
+		<Optimize>true</Optimize>
+		<Tailcalls>true</Tailcalls>
+		<OutputPath>..\..\bin\Release\</OutputPath>
+		<DefineConstants>TRACE</DefineConstants>
+		<WarningLevel>3</WarningLevel>
+		<DocumentationFile>bin\$(Configuration)\$(AssemblyName).XML</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup>
+		<MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="AssemblyInfo.fs" />
+		<None Include="Script.fsx" />
+		<Content Include="packages.config" />
+		<Compile Include="GpuReduction.fs" />
+		<None Include="Tests.fsx" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="SharpDX.Desktop" Version="4.2.0" />
+		<PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+		<PackageReference Include="SharpDX.Direct3D11.Effects" Version="4.2.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="mscorlib" />
+		<Reference Include="FSharp.Core">
+			<Name>FSharp.Core</Name>
+			<AssemblyName>FSharp.Core.dll</AssemblyName>
+			<HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
+		</Reference>
+		<Reference Include="SharpDX">
+			<HintPath>..\..\lib\nuget\SharpDX.4.0.1\lib\net45\SharpDX.dll</HintPath>
+		</Reference>
+		<Reference Include="SharpDX.D3DCompiler">
+			<HintPath>..\..\lib\nuget\SharpDX.D3DCompiler.4.0.1\lib\net45\SharpDX.D3DCompiler.dll</HintPath>
+		</Reference>
+		<Reference Include="SharpDX.Direct3D11">
+			<HintPath>..\..\lib\nuget\SharpDX.Direct3D11.4.0.1\lib\net45\SharpDX.Direct3D11.dll</HintPath>
+		</Reference>
+		<Reference Include="SharpDX.DXGI">
+			<HintPath>..\..\lib\nuget\SharpDX.DXGI.4.0.1\lib\net45\SharpDX.DXGI.dll</HintPath>
+		</Reference>
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Numerics" />
+		<Reference Include="System.ValueTuple">
+			<HintPath>..\..\lib\nuget\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\HostEnvironments\Mephi.Cybernetics.Race.Core.Host.fsproj">
+			<Name>Mephi.Cybernetics.Race.Core.Host</Name>
+			<Project>{da2fd2da-8347-47c2-b43d-08eb382cc404}</Project>
+			<Private>True</Private>
+		</ProjectReference>
+	</ItemGroup>
+	<!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

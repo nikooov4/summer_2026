@@ -1,0 +1,706 @@
+@page "/attendance"
+@rendermode InteractiveServer
+@inject AttendanceWorkspace Workspace
+
+<PageTitle>Журнал посещений</PageTitle>
+
+<div class="app-shell attendance-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">CM</div>
+            <div>
+                <div class="brand-title">Concept Mapping</div>
+                <div class="brand-subtitle">ведомости и посещения</div>
+            </div>
+        </div>
+
+        <nav class="app-navigation" aria-label="Разделы приложения">
+            <a class="app-nav-link" href="/monitoring">
+                <span>Мониторинг</span>
+                <small>сводка за период</small>
+            </a>
+            <a class="app-nav-link active" href="/attendance">
+                <span>Журнал посещений</span>
+                <small>рабочий экран</small>
+            </a>
+            <a class="app-nav-link" href="/">
+                <span>Концепты</span>
+                <small>структура ведомостей</small>
+            </a>
+        </nav>
+
+        <div class="sidebar-label">Занятия группы</div>
+        <nav class="concept-list" aria-label="Занятия">
+            @foreach (var lesson in Workspace.Data.Lessons.OrderByDescending(item => item.StartsAt))
+            {
+                <button class="@GetLessonButtonClass(lesson)"
+                        type="button"
+                        @onclick="() => SelectLesson(lesson.Id)">
+                    <span>
+                        <strong>@lesson.StartsAt.ToString("dd.MM")</strong>
+                        @lesson.Topic
+                    </span>
+                    <small>@GetLessonCompletion(lesson)</small>
+                </button>
+            }
+        </nav>
+    </aside>
+
+    <main class="workspace">
+        @if (CurrentLesson is null)
+        {
+            <section class="empty-state">
+                <h1>Занятий нет</h1>
+                <button class="text-button primary" type="button" @onclick="ResetSample">Загрузить пример</button>
+            </section>
+        }
+        else
+        {
+            <section class="topbar">
+                <div>
+                    <p class="eyebrow">@CurrentLesson.CourseName · @CurrentLesson.GroupName</p>
+                    <h1>@CurrentLesson.Topic</h1>
+                    <p class="context-line">
+                        @CurrentLesson.StartsAt.ToString("dd.MM.yyyy, HH:mm") · аудитория @CurrentLesson.Room
+                        · <span class="@GetJournalStateClass()">@GetJournalStateLabel()</span>
+                    </p>
+                </div>
+
+                <div class="mode-switch" aria-label="Режим просмотра">
+                    <button class="@GetModeButtonClass(AttendanceViewMode.Teacher)"
+                            type="button"
+                            @onclick="() => SetMode(AttendanceViewMode.Teacher)">
+                        Преподаватель
+                    </button>
+                    <button class="@GetModeButtonClass(AttendanceViewMode.Student)"
+                            type="button"
+                            @onclick="() => SetMode(AttendanceViewMode.Student)">
+                        Студент
+                    </button>
+                </div>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(statusMessage))
+            {
+                <div class="@GetStatusClass()" role="status">@statusMessage</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Workspace.LastStorageError))
+            {
+                <div class="notice error" role="status">@Workspace.LastStorageError</div>
+            }
+
+            @if (viewMode == AttendanceViewMode.Teacher)
+            {
+                <section class="attendance-summary" aria-label="Сводные показатели занятия">
+                    <button type="button" class="@GetSummaryButtonClass(null)" @onclick="() => SetStatusFilter(null)">
+                        <strong>@CurrentSummary.Completed/@CurrentSummary.Total</strong>
+                        <span>отмечено</span>
+                    </button>
+                    <button type="button" class="@GetSummaryButtonClass(AttendanceStatus.Present)" @onclick="() => SetStatusFilter(AttendanceStatus.Present)">
+                        <strong>@CurrentSummary.Present</strong>
+                        <span>присутствуют</span>
+                    </button>
+                    <button type="button" class="@GetSummaryButtonClass(AttendanceStatus.Late)" @onclick="() => SetStatusFilter(AttendanceStatus.Late)">
+                        <strong>@CurrentSummary.Late</strong>
+                        <span>опоздали</span>
+                    </button>
+                    <button type="button" class="@GetSummaryButtonClass(AttendanceStatus.Absent)" @onclick="() => SetStatusFilter(AttendanceStatus.Absent)">
+                        <strong>@CurrentSummary.Absent</strong>
+                        <span>отсутствуют</span>
+                    </button>
+                    <button type="button" class="@GetSummaryButtonClass(AttendanceStatus.Unmarked)" @onclick="() => SetStatusFilter(AttendanceStatus.Unmarked)">
+                        <strong>@CurrentSummary.Unmarked</strong>
+                        <span>не отмечены</span>
+                    </button>
+                </section>
+
+                <section class="data-section">
+                    <div class="attendance-toolbar">
+                        <label class="toolbar-search">
+                            Поиск
+                            <input placeholder="ФИО или зачетная книжка"
+                                   @bind="searchText"
+                                   @bind:event="oninput" />
+                        </label>
+
+                        <label>
+                            Статус
+                            <select value="@GetFilterValue()" @onchange="ChangeStatusFilter">
+                                <option value="All">Все статусы</option>
+                                @foreach (var status in Enum.GetValues<AttendanceStatus>())
+                                {
+                                    <option value="@status">@AttendanceWorkspace.GetStatusLabel(status)</option>
+                                }
+                            </select>
+                        </label>
+
+                        <label>
+                            Сортировка
+                            <select @bind="sortMode">
+                                <option value="@AttendanceSortMode.Name">По ФИО</option>
+                                <option value="@AttendanceSortMode.Status">По статусу</option>
+                                <option value="@AttendanceSortMode.LateMinutes">По опозданию</option>
+                            </select>
+                        </label>
+
+                        <div class="toolbar-actions">
+                            <button class="text-button"
+                                    type="button"
+                                    disabled="@CurrentLesson.IsCompleted"
+                                    @onclick="MarkVisiblePresent">
+                                Отметить неотмеченных
+                            </button>
+                            <button class="text-button" type="button" disabled="@(!HasUnsavedChanges)" @onclick="Revert">
+                                Отменить
+                            </button>
+                            <button class="text-button primary" type="button" disabled="@(!HasUnsavedChanges || CurrentLesson.IsCompleted)" @onclick="Save">
+                                Сохранить @GetDirtySuffix()
+                            </button>
+                            @if (CurrentLesson.IsCompleted)
+                            {
+                                <button class="text-button" type="button" @onclick="ReopenCurrent">
+                                    Возобновить журнал
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="text-button"
+                                        type="button"
+                                        disabled="@(HasUnsavedChanges || CurrentSummary.Unmarked > 0)"
+                                        title="@GetCompleteCurrentTitle()"
+                                        @onclick="CompleteCurrent">
+                                    Завершить журнал
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="table-frame attendance-table-frame">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Студент</th>
+                                    <th>Статус</th>
+                                    <th>Минуты</th>
+                                    <th>Комментарий</th>
+                                    <th>Состояние</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in VisibleRows)
+                                {
+                                    <tr class="@GetAttendanceRowClass(row)" @key="row.Student.Id">
+                                        <td class="student-cell">
+                                            <strong>@row.Student.FullName</strong>
+                                            <small>@row.Student.RecordBookNumber</small>
+                                        </td>
+                                        <td>
+                                            <select class="cell-select"
+                                                    disabled="@CurrentLesson.IsCompleted"
+                                                    value="@row.Entry.Status"
+                                                    @onchange="eventArgs => ChangeEntryStatus(row.Entry, eventArgs.Value?.ToString())">
+                                                @foreach (var status in Enum.GetValues<AttendanceStatus>())
+                                                {
+                                                    <option value="@status">@AttendanceWorkspace.GetStatusShortLabel(status)</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input class="cell-input attendance-minutes"
+                                                   type="number"
+                                                   min="1"
+                                                   max="180"
+                                                   disabled="@(CurrentLesson.IsCompleted || row.Entry.Status != AttendanceStatus.Late)"
+                                                   value="@row.Entry.LateMinutes"
+                                                   @oninput="eventArgs => UpdateLateMinutes(row.Entry, eventArgs.Value?.ToString())" />
+                                        </td>
+                                        <td>
+                                            <input class="cell-input attendance-comment"
+                                                   placeholder="@GetCommentPlaceholder(row.Entry.Status)"
+                                                   disabled="@CurrentLesson.IsCompleted"
+                                                   value="@row.Entry.Comment"
+                                                   @oninput="eventArgs => UpdateComment(row.Entry, eventArgs.Value?.ToString())" />
+                                        </td>
+                                        <td class="row-state-cell">
+                                            @if (row.ValidationError is not null)
+                                            {
+                                                <span class="row-state error-state" title="@row.ValidationError">Ошибка</span>
+                                            }
+                                            else if (row.IsDirty)
+                                            {
+                                                <span class="row-state dirty-state">Черновик</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="row-state saved-state">Сохранено</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    @if (row.ValidationError is not null)
+                                    {
+                                        <tr class="validation-row">
+                                            <td colspan="5">@row.ValidationError</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (VisibleRows.Count == 0)
+                    {
+                        <div class="inline-empty">По выбранным условиям студентов не найдено.</div>
+                    }
+                </section>
+            }
+            else
+            {
+                <section class="student-history-header">
+                    <label>
+                        Студент
+                        <select @bind="selectedStudentId">
+                            @foreach (var student in Workspace.Data.Students.OrderBy(item => item.FullName))
+                            {
+                                <option value="@student.Id">@student.FullName</option>
+                            }
+                        </select>
+                    </label>
+
+                    <div class="student-history-summary">
+                        <div>
+                            <strong>@StudentSummary.AttendancePercent%</strong>
+                            <span>учтённая посещаемость</span>
+                        </div>
+                        <div>
+                            <strong>@StudentSummary.Absent</strong>
+                            <span>пропусков</span>
+                        </div>
+                        <div>
+                            <strong>@StudentSummary.Late</strong>
+                            <span>опозданий</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="data-section">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Личный режим без редактирования</p>
+                            <h2>История посещений</h2>
+                        </div>
+                    </div>
+
+                    <div class="table-frame">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Дисциплина и тема</th>
+                                    <th>Статус</th>
+                                    <th>Подробности</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in StudentHistory)
+                                {
+                                    <tr>
+                                        <td>@item.Lesson.StartsAt.ToString("dd.MM.yyyy")</td>
+                                        <td class="student-cell">
+                                            <strong>@item.Lesson.CourseName</strong>
+                                            <small>@item.Lesson.Topic</small>
+                                        </td>
+                                        <td>
+                                            <span class="@GetStatusBadgeClass(item.Entry.Status)">
+                                                @AttendanceWorkspace.GetStatusLabel(item.Entry.Status)
+                                            </span>
+                                        </td>
+                                        <td>@GetEntryDetails(item.Entry)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            }
+        }
+    </main>
+
+    <aside class="inspector">
+        @if (CurrentLesson is not null)
+        {
+            <section class="inspector-section">
+                <p class="eyebrow">Контекст</p>
+                <dl class="detail-list">
+                    <div>
+                        <dt>Дисциплина</dt>
+                        <dd>@CurrentLesson.CourseName</dd>
+                    </div>
+                    <div>
+                        <dt>Группа</dt>
+                        <dd>@CurrentLesson.GroupName</dd>
+                    </div>
+                    <div>
+                        <dt>Дата</dt>
+                        <dd>@CurrentLesson.StartsAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                    </div>
+                    <div>
+                        <dt>Аудитория</dt>
+                        <dd>@CurrentLesson.Room</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="inspector-section">
+                <p class="eyebrow">Состояние журнала</p>
+                <div class="inspector-metric">
+                    <strong>@CurrentSummary.AttendancePercent%</strong>
+                    <span>присутствовали или имели уважительную причину</span>
+                </div>
+                <div class="inspector-metric">
+                    <strong>@DirtyCount</strong>
+                    <span>несохранённых строк</span>
+                </div>
+                <div class="inspector-metric">
+                    <strong>@GetJournalStateLabel()</strong>
+                    <span>состояние для мониторинга</span>
+                </div>
+            </section>
+
+            <section class="inspector-section">
+                <p class="eyebrow">Правила</p>
+                <p class="inspector-note">Для опоздания требуется количество минут.</p>
+                <p class="inspector-note">Для уважительной причины требуется комментарий.</p>
+                <p class="inspector-note">Данные сохраняются локально в JSON и доступны после перезапуска.</p>
+                <button class="text-button danger" type="button" @onclick="ResetSample">Сбросить демо-данные</button>
+            </section>
+        }
+    </aside>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "view")]
+    public string? RequestedView { get; set; }
+
+    [SupplyParameterFromQuery(Name = "lesson")]
+    public string? RequestedLesson { get; set; }
+
+    private AttendanceViewMode viewMode = AttendanceViewMode.Teacher;
+    private string searchText = string.Empty;
+    private AttendanceStatus? statusFilter;
+    private AttendanceSortMode sortMode = AttendanceSortMode.Name;
+    private string selectedStudentId = string.Empty;
+    private string? statusMessage;
+    private bool statusIsError;
+
+    private AttendanceLessonModel? CurrentLesson => Workspace.SelectedLesson;
+
+    private AttendanceSummaryModel CurrentSummary =>
+        CurrentLesson is null
+            ? new AttendanceSummaryModel(0, 0, 0, 0, 0, 0)
+            : Workspace.GetSummary(CurrentLesson);
+
+    private IReadOnlyList<AttendanceRowModel> VisibleRows =>
+        CurrentLesson is null
+            ? Array.Empty<AttendanceRowModel>()
+            : SortRows(Workspace.GetRows(CurrentLesson, searchText, statusFilter));
+
+    private int DirtyCount => CurrentLesson is null ? 0 : Workspace.DirtyCount(CurrentLesson);
+
+    private bool HasUnsavedChanges => CurrentLesson is not null && Workspace.HasUnsavedChanges(CurrentLesson);
+
+    private IReadOnlyList<AttendanceHistoryItemModel> StudentHistory =>
+        string.IsNullOrWhiteSpace(selectedStudentId)
+            ? Array.Empty<AttendanceHistoryItemModel>()
+            : Workspace.GetStudentHistory(selectedStudentId);
+
+    private AttendanceSummaryModel StudentSummary =>
+        string.IsNullOrWhiteSpace(selectedStudentId)
+            ? new AttendanceSummaryModel(0, 0, 0, 0, 0, 0)
+            : Workspace.GetStudentSummary(selectedStudentId);
+
+    protected override void OnInitialized()
+    {
+        selectedStudentId = Workspace.Data.Students.OrderBy(student => student.FullName).FirstOrDefault()?.Id ?? string.Empty;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(RequestedLesson))
+        {
+            Workspace.SelectLesson(RequestedLesson);
+        }
+
+        viewMode = RequestedView?.Equals("student", StringComparison.OrdinalIgnoreCase) == true
+            ? AttendanceViewMode.Student
+            : AttendanceViewMode.Teacher;
+    }
+
+    private void SelectLesson(string lessonId)
+    {
+        Workspace.SelectLesson(lessonId);
+        searchText = string.Empty;
+        statusFilter = null;
+        ClearStatus();
+    }
+
+    private void SetMode(AttendanceViewMode mode)
+    {
+        viewMode = mode;
+        ClearStatus();
+    }
+
+    private void SetStatusFilter(AttendanceStatus? status)
+    {
+        statusFilter = status;
+    }
+
+    private void ChangeStatusFilter(ChangeEventArgs eventArgs)
+    {
+        var value = eventArgs.Value?.ToString();
+        statusFilter = Enum.TryParse<AttendanceStatus>(value, out var parsed) ? parsed : null;
+    }
+
+    private void ChangeEntryStatus(AttendanceEntryModel entry, string? value)
+    {
+        if (Enum.TryParse<AttendanceStatus>(value, out var status))
+        {
+            Workspace.UpdateStatus(entry, status);
+        }
+
+        ClearStatus();
+    }
+
+    private void UpdateLateMinutes(AttendanceEntryModel entry, string? value)
+    {
+        Workspace.UpdateLateMinutes(entry, value);
+        ClearStatus();
+    }
+
+    private void UpdateComment(AttendanceEntryModel entry, string? value)
+    {
+        Workspace.UpdateComment(entry, value);
+        ClearStatus();
+    }
+
+    private void MarkVisiblePresent()
+    {
+        if (CurrentLesson?.IsCompleted == true)
+        {
+            return;
+        }
+
+        var changed = Workspace.MarkUnmarkedPresent(VisibleRows);
+        statusIsError = false;
+        statusMessage = changed == 0
+            ? "В текущей выборке нет неотмеченных студентов."
+            : $"Присутствие установлено для {changed} студентов. Изменения пока не сохранены.";
+    }
+
+    private void Save()
+    {
+        TryRun(() =>
+        {
+            Workspace.SaveSelectedLesson();
+            statusMessage = "Журнал сохранён в локальный JSON-файл.";
+        });
+    }
+
+    private void Revert()
+    {
+        TryRun(() =>
+        {
+            Workspace.RevertSelectedLesson();
+            statusMessage = "Несохранённые изменения отменены.";
+        });
+    }
+
+    private void CompleteCurrent()
+    {
+        if (CurrentLesson is null)
+        {
+            return;
+        }
+
+        TryRun(() =>
+        {
+            Workspace.CompleteLesson(CurrentLesson.Id);
+            statusMessage = "Журнал завершён и включён в показатели мониторинга.";
+        });
+    }
+
+    private void ReopenCurrent()
+    {
+        if (CurrentLesson is null)
+        {
+            return;
+        }
+
+        TryRun(() =>
+        {
+            Workspace.ReopenLesson(CurrentLesson.Id);
+            statusMessage = "Журнал возобновлён. Теперь отметки снова можно редактировать.";
+        });
+    }
+
+    private void ResetSample()
+    {
+        TryRun(() =>
+        {
+            Workspace.ResetSample();
+            searchText = string.Empty;
+            statusFilter = null;
+            selectedStudentId = Workspace.Data.Students.OrderBy(student => student.FullName).First().Id;
+            statusMessage = "Демонстрационные данные восстановлены.";
+        });
+    }
+
+    private void TryRun(Action action)
+    {
+        try
+        {
+            statusIsError = false;
+            action();
+        }
+        catch (InvalidOperationException exception)
+        {
+            statusIsError = true;
+            statusMessage = exception.Message;
+        }
+    }
+
+    private void ClearStatus()
+    {
+        statusMessage = null;
+        statusIsError = false;
+    }
+
+    private string GetLessonButtonClass(AttendanceLessonModel lesson)
+    {
+        return lesson.Id == CurrentLesson?.Id ? "concept-button lesson-button active" : "concept-button lesson-button";
+    }
+
+    private string GetLessonCompletion(AttendanceLessonModel lesson)
+    {
+        var summary = Workspace.GetSummary(lesson);
+        return $"{summary.Completed}/{summary.Total}";
+    }
+
+    private string GetModeButtonClass(AttendanceViewMode mode)
+    {
+        return mode == viewMode ? "active" : string.Empty;
+    }
+
+    private string GetSummaryButtonClass(AttendanceStatus? status)
+    {
+        return status == statusFilter ? "active" : string.Empty;
+    }
+
+    private string GetFilterValue()
+    {
+        return statusFilter?.ToString() ?? "All";
+    }
+
+    private IReadOnlyList<AttendanceRowModel> SortRows(IReadOnlyList<AttendanceRowModel> rows)
+    {
+        return sortMode switch
+        {
+            AttendanceSortMode.Status => rows
+                .OrderBy(row => row.Entry.Status)
+                .ThenBy(row => row.Student.FullName)
+                .ToList(),
+            AttendanceSortMode.LateMinutes => rows
+                .OrderByDescending(row => row.Entry.LateMinutes ?? 0)
+                .ThenBy(row => row.Student.FullName)
+                .ToList(),
+            _ => rows.OrderBy(row => row.Student.FullName).ToList()
+        };
+    }
+
+    private string GetAttendanceRowClass(AttendanceRowModel row)
+    {
+        if (row.ValidationError is not null)
+        {
+            return "attendance-row invalid-row";
+        }
+
+        return row.IsDirty ? "attendance-row dirty-row" : "attendance-row";
+    }
+
+    private string GetDirtySuffix()
+    {
+        return DirtyCount == 0 ? string.Empty : $"({DirtyCount})";
+    }
+
+    private string GetStatusClass()
+    {
+        return statusIsError ? "notice error" : "notice success";
+    }
+
+    private string GetJournalStateLabel()
+    {
+        if (CurrentLesson?.IsCompleted == true)
+        {
+            return "Завершён";
+        }
+
+        return CurrentSummary.Unmarked > 0 ? "Требует внимания" : "Черновик";
+    }
+
+    private string GetJournalStateClass()
+    {
+        if (CurrentLesson?.IsCompleted == true)
+        {
+            return "journal-state complete";
+        }
+
+        return CurrentSummary.Unmarked > 0
+            ? "journal-state attention"
+            : "journal-state draft";
+    }
+
+    private string GetCompleteCurrentTitle()
+    {
+        if (HasUnsavedChanges)
+        {
+            return "Сначала сохраните изменения";
+        }
+
+        return CurrentSummary.Unmarked > 0
+            ? $"Сначала отметьте всех студентов: осталось {CurrentSummary.Unmarked}"
+            : "Завершить журнал";
+    }
+
+    private static string GetCommentPlaceholder(AttendanceStatus status)
+    {
+        return status == AttendanceStatus.Excused ? "Причина обязательна" : "Комментарий";
+    }
+
+    private static string GetEntryDetails(AttendanceEntryModel entry)
+    {
+        if (entry.Status == AttendanceStatus.Late && entry.LateMinutes is not null)
+        {
+            return $"Опоздание на {entry.LateMinutes} мин. {entry.Comment}".Trim();
+        }
+
+        return entry.Comment ?? string.Empty;
+    }
+
+    private static string GetStatusBadgeClass(AttendanceStatus status)
+    {
+        return $"status-badge status-{status.ToString().ToLowerInvariant()}";
+    }
+
+    private enum AttendanceViewMode
+    {
+        Teacher,
+        Student
+    }
+
+    private enum AttendanceSortMode
+    {
+        Name,
+        Status,
+        LateMinutes
+    }
+}

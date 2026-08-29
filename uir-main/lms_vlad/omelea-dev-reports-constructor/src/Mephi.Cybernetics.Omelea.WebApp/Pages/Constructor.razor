@@ -1,0 +1,175 @@
+@page "/constructor"
+@using Mephi.Cybernetics.Race.WebApp.Services
+@inject StatementService StatementService
+@inject NavigationManager NavigationManager
+
+<h3>Конструктор ведомости</h3>
+
+<div class="mb-4">
+    <label>Количество студентов:</label>
+    <input type="number" @bind="studentCount" min="1" class="form-control" />
+
+    <label class="mt-2">Количество разделов:</label>
+    <input type="number" @bind="sectionCount" min="1" class="form-control" />
+
+    <label class="mt-2">Название экзамена:</label>
+    <input type="text" @bind="subjectName" class="form-control" />
+
+    <button class="btn btn-primary mt-3" @onclick="GenerateTable">Создать ведомость</button>
+</div>
+
+@if (Students?.Any() == true)
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ФИО</th>
+                @for (int i = 0; i < sectionCount; i++)
+                {
+                    <th>Раздел @(i + 1)</th>
+                }
+                <th>@subjectName (30–50)</th>
+                <th>Сумма</th>
+                <th>Оценка</th>
+                <th>Код</th>
+                <th>ECTS</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Students.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <input @bind="Students[i].FullName" class="form-control" />
+                    </td>
+                    @for (int j = 0; j < sectionCount; j++)
+                    {
+                        <td>
+                            <input type="number" @bind="Students[i].Sections[j]" class="form-control"
+                                   @oninput="e => Recalculate(i)" />
+                        </td>
+                    }
+                    <td>
+                        <input type="number" @bind="Students[i].Exam" class="form-control"
+                               @oninput="e => Recalculate(i)" />
+                    </td>
+                    <td>@Students[i].Total</td>
+                    <td>@Students[i].Mark</td>
+                    <td>@Students[i].Code</td>
+                    <td>@Students[i].ECTS</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button class="btn btn-success mt-3" @onclick="SaveStatement">Сохранить ведомость</button>
+
+    @if (saveMessage != null)
+    {
+        <div class="alert alert-success mt-3">@saveMessage</div>
+    }
+}
+
+@code {
+    private int studentCount = 5;
+    private int sectionCount = 2;
+    private string subjectName = "Экзамен";
+    private List<TempStudent> Students = new();
+    private string? saveMessage;
+
+    private void GenerateTable()
+    {
+        Students = new();
+        for (int i = 0; i < studentCount; i++)
+        {
+            Students.Add(new TempStudent
+            {
+                FullName = $"Студент {i + 1}",
+                Sections = Enumerable.Repeat(0, sectionCount).ToList(),
+                Exam = 0
+            });
+        }
+
+        for (int i = 0; i < Students.Count; i++)
+        {
+            Recalculate(i);
+        }
+
+        saveMessage = null;
+    }
+
+    private void Recalculate(int i)
+    {
+        var student = Students[i];
+        student.Total = student.Sections.Sum() + student.Exam;
+        student.Mark = GetMark(student.Total);
+        student.Code = GetCode(student.Total);
+        student.ECTS = GetECTS(student.Total);
+    }
+
+    private void SaveStatement()
+    {
+        var statement = new StatementModel
+        {
+            Name = subjectName,
+            Subjects = Enumerable.Range(1, sectionCount).Select(i => $"Раздел {i}").ToList(),
+            Students = Students.Select(s => new StudentModel
+            {
+                FullName = s.FullName,
+                Sections = s.Sections.ToList(),
+                Exam = s.Exam,
+                SectionSum = s.Sections.Sum(),
+                Total = s.Total,
+                Mark = s.Mark,
+                Code = s.Code,
+                ECTS = s.ECTS
+            }).ToList()
+        };
+
+        StatementService.SetStatement(statement);
+        saveMessage = "Ведомость успешно сохранена.";
+    }
+
+    private string GetMark(int total) => total switch
+    {
+        >= 90 => "Отлично",
+        >= 85 => "Хорошо",
+        >= 75 => "Хорошо",
+        >= 70 => "Хорошо",
+        >= 65 => "Удовлетворительно",
+        >= 60 => "Удовлетворительно",
+        _ => "Неудовлетворительно"
+    };
+
+    private string GetCode(int total) => total switch
+    {
+        >= 90 => "5",
+        >= 85 => "4",
+        >= 75 => "4",
+        >= 70 => "4",
+        >= 65 => "3",
+        >= 60 => "3",
+        _ => "2"
+    };
+
+    private string GetECTS(int total) => total switch
+    {
+        >= 90 => "A",
+        >= 85 => "B",
+        >= 75 => "C",
+        >= 70 => "D",
+        >= 60 => "E",
+        _ => "F"
+    };
+
+    public class TempStudent
+    {
+        public string FullName { get; set; } = "";
+        public List<int> Sections { get; set; } = new();
+        public int Exam { get; set; }
+        public int Total { get; set; }
+        public string Mark { get; set; } = "";
+        public string Code { get; set; } = "";
+        public string ECTS { get; set; } = "";
+    }
+}

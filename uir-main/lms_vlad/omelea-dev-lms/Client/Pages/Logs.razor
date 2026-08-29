@@ -1,0 +1,49 @@
+﻿@page "/audit_log"
+@inject HttpClient Http
+@using Mephi.Cyber.AuthService.Core.Models
+<MudTable Items="@auditLogs" Hover="true" SortLabel="Sort By" Elevation="0" Filter="new Func<AuditLog,bool>(FilterFunc1)">
+    <ToolBarContent>
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<AuditLog, object>(x => x.Timestamp)">Timestamp</MudTableSortLabel></MudTh>
+        <MudTh>Message</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd Class="py-1" DataLabel="Date">@context.Timestamp</MudTd>
+        <MudTd Class="py-1">@context.LogMessage</MudTd>
+        @* <MudTd Class="py-2"> *@
+        @*     <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" @onclick="() => Remove(context.LogMessage)">Delete</MudButton> *@
+        @* </MudTd> *@
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private List<AuditLog> auditLogs = new();
+    private bool isLoading = true;
+    private string searchString1 = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        auditLogs = await Http.GetFromJsonAsync<List<AuditLog>>("audit_logs");
+        isLoading = false;
+    }
+
+    private bool FilterFunc1(AuditLog log)
+    {
+        if (string.IsNullOrWhiteSpace(searchString1))
+            return true;
+        if (log.LogMessage.Contains(searchString1, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private void Remove(string logMessage)
+    {
+        // Implement removal logic if needed
+    }
+}

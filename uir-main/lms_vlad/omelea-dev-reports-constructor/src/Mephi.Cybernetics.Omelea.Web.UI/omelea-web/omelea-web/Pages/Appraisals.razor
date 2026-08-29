@@ -1,0 +1,71 @@
+﻿@page "/appraisals/{id}"
+@inject NavigationManager NavManager
+
+
+<h1>@Appraisal.Name</h1>
+<p class="mb-4">@Appraisal.Description</p>
+
+ <MudTable Items="Persons" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Фамилия</MudTh>
+
+        @for (var i = 0; i < OrderedColumns.Count; i++)
+        {
+            var col = OrderedColumns[i];
+
+            <MudTh>@col.Name</MudTh>
+        }
+        
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Имя">@context.LastName</MudTd>
+        
+        @for (var i = 0; i < OrderedColumns.Count; i++)
+        {
+            var col = OrderedColumns[i];
+
+            var mark = col.AppraisalListMarks.FirstOrDefault(a => a.AppraisalListColumnId == col.Id && a.StudentPersonId == context.Id);
+
+            <MudTh>@mark?.Score</MudTh>
+        }
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private Guid? appraisalId;
+
+    public AppraisalList Appraisal { get; set; }
+
+    public List<AppraisalListColumn> OrderedColumns { get; set; }
+
+    public List<Person> Persons { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Guid.TryParse(id, out Guid parsedGuid))
+        {
+            appraisalId = parsedGuid;
+
+            Appraisal = Mock.FakeAppraisalListResults.FirstOrDefault(a => a.Id == appraisalId);
+
+            if(Appraisal == null)
+            {
+                NavManager.NavigateTo("/courses");
+
+            }
+
+            OrderedColumns = Appraisal.AppraisalListColumns.OrderBy(c => c.OrderIndex).ToList();
+
+            Persons = Mock.FakePeople();
+
+        } else
+        {
+            NavManager.NavigateTo("/courses");
+        }
+
+    }
+
+}

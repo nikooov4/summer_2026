@@ -1,0 +1,141 @@
+
+@using LMSDashboardBlazor.Models.Forms
+
+@if (Schema is null)
+{
+    <div class="dynamic-form-empty">
+        <i class="fas fa-diagram-project"></i>
+        <p>Схема формы не загружена.</p>
+    </div>
+}
+else
+{
+    <div class="dynamic-form-surface">
+        <div class="dynamic-form-header">
+            <div>
+                <p class="dynamic-form-entity">Сущность: @Schema.EntityName</p>
+                <h2>@Schema.Title</h2>
+                <p class="dynamic-form-description">@Schema.Description</p>
+            </div>
+            <div class="dynamic-form-meta">
+                <span class="meta-pill">@VisibleFieldCount полей</span>
+                <span class="meta-pill">@ActiveRoleLabels.Count активных ролей</span>
+            </div>
+        </div>
+
+       @foreach (var formSection in Schema.Sections)
+{
+    var visibleFields = GetVisibleFields(formSection).ToList();
+    if (visibleFields.Count == 0)
+    {
+        continue;
+    }
+
+    <section class="dynamic-form-section">
+        <div class="dynamic-section-header">
+            <h3>@formSection.Title</h3>
+            @if (!string.IsNullOrWhiteSpace(formSection.Description))
+            {
+                <p>@formSection.Description</p>
+            }
+        </div>
+
+        <div class="dynamic-fields-grid">
+    @foreach (var field in visibleFields)
+    {
+        <DynamicFieldRenderer
+            Field="@field"
+            Value="@(GetValue(field.Key))"
+            Disabled="@(IsDisabled(field))"
+            ValueChanged="@(value => SetValue(field.Key, value))" />
+    }
+</div>
+    </section>
+}
+
+        <div class="dynamic-form-actions">
+            <button class="secondary-action" type="button" @onclick="ResetValues">Сбросить значения</button>
+            <button class="primary-action" type="button" @onclick="SaveValues">Сохранить макет</button>
+        </div>
+    </div>
+
+    
+}
+
+@code {
+    [Parameter] public SemanticFormSchema? Schema { get; set; }
+    [Parameter] public IReadOnlyCollection<string> ActiveRoleLabels { get; set; } = Array.Empty<string>();
+
+    private readonly Dictionary<string, object?> _values = new(StringComparer.OrdinalIgnoreCase);
+    private string? _schemaId;
+
+    private string StatusMessage { get; set; } = "Черновик не сохранён";
+
+    private int VisibleFieldCount => Schema?.Sections.SelectMany(GetVisibleFields).Count() ?? 0;
+
+    protected override void OnParametersSet()
+    {
+        if (Schema is null)
+        {
+            return;
+        }
+
+        if (!string.Equals(_schemaId, Schema.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            _schemaId = Schema.Id;
+            InitializeDefaults(Schema);
+        }
+    }
+
+    private void InitializeDefaults(SemanticFormSchema schema)
+    {
+        _values.Clear();
+
+        foreach (var field in schema.Sections.SelectMany(section => section.Fields))
+        {
+            if (string.Equals(field.Type, "checkbox", StringComparison.OrdinalIgnoreCase))
+            {
+                _values[field.Key] = bool.TryParse(field.DefaultValue, out var parsed) && parsed;
+            }
+            else
+            {
+                _values[field.Key] = field.DefaultValue ?? string.Empty;
+            }
+        }
+
+        StatusMessage = "Черновик не сохранён";
+    }
+
+    private IEnumerable<FormFieldSchema> GetVisibleFields(FormSectionSchema section)
+        => section.Fields.Where(field => IsVisible(field));
+
+    private bool IsVisible(FormFieldSchema field)
+        => field.VisibleForRoles.Count == 0 || field.VisibleForRoles.Any(ActiveRoleLabels.Contains);
+
+    private bool IsDisabled(FormFieldSchema field)
+        => field.ReadOnly || (field.EditableForRoles.Count > 0 && !field.EditableForRoles.Any(ActiveRoleLabels.Contains));
+
+    private object? GetValue(string key)
+        => _values.TryGetValue(key, out var value) ? value : null;
+
+    private void SetValue(string key, object? value)
+    {
+        _values[key] = value;
+        StatusMessage = "Черновик обновлён";
+    }
+
+    private void ResetValues()
+    {
+        if (Schema is null)
+        {
+            return;
+        }
+
+        InitializeDefaults(Schema);
+    }
+
+    private void SaveValues()
+    {
+        StatusMessage = $"Макет сохранён: {DateTime.Now:HH:mm:ss}";
+    }
+}

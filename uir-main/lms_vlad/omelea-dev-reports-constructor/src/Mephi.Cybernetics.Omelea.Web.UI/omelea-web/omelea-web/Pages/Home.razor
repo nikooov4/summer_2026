@@ -1,0 +1,25 @@
+﻿@page "/"
+
+<MudContainer Class="mt-16">
+    <MudGrid Class="mt-8 justify-center">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center">Welcome to the app.</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Href="/courses"
+                               Variant="Variant.Filled"
+                               EndIcon="@Icons.Material.Outlined.EditNote"
+                               Color="Color.Primary"
+                               >
+                        Go to Courses
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+

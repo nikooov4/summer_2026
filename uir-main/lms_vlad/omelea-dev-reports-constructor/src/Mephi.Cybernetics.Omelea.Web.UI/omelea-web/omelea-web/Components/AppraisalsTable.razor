@@ -1,0 +1,33 @@
+﻿@inject NavigationManager NavManager
+
+<MudTable T="AppraisalList" Items="@AppraisalLists" Hover="true" Breakpoint="Breakpoint.Sm" Class="ma-4 border mud-border-primary" RowClass="cursor-pointer" OnRowClick="RowClickEvent">
+    <HeaderContent>
+        <MudTh>Название</MudTh>
+        <MudTh>Описание</MudTh>
+        <MudTh>Год</MudTh>
+        <MudTh>Создан</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Название">@context.Name</MudTd>
+        <MudTd DataLabel="Описание">@context.Description</MudTd>
+        <MudTd DataLabel="Год">@context.Year</MudTd>
+        <MudTd DataLabel="Создан">@context.DateCreated.ToString("dd MMM yyyy")</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter]
+    public IEnumerable<AppraisalList> AppraisalLists { get; set; }
+
+    private void RowClickEvent(TableRowClickEventArgs<AppraisalList> tableRowClickEventArgs)
+    {
+        if (tableRowClickEventArgs.Item == null)
+        {
+            return;
+        }
+        var id = tableRowClickEventArgs.Item.Id;
+
+        NavManager.NavigateTo($"/appraisals/{@id}");
+    }
+
+}

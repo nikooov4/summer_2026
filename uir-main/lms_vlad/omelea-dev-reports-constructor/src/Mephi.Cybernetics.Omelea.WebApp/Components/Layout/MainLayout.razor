@@ -1,0 +1,34 @@
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <link href="bootstrap.min/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</HeadContent>
+
+<div class="app-container d-flex flex-column min-vh-100">
+    <header>
+        <NavMenu />
+    </header>
+
+    <main class="flex-fill container py-4">
+        @Body
+    </main>
+
+    <footer class="text-center mt-auto py-3 text-muted">
+        &copy; @DateTime.Now.Year — Ведомости МИФИ
+    </footer>
+</div>
+
+<style>
+    .app-container {
+        background-color: #f8f9fa; /* светлый фон */
+        color: #212529; /* тёмный текст */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    footer {
+        color: #6c757d; /* более мягкий серый для футера */
+        font-size: 0.9rem;
+    }
+</style>

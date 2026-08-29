@@ -1,0 +1,47 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{2CB42F12-E813-91B3-7D11-3220E40BEF4A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{DAD03CFC-D5FA-AC94-41C7-9ABAB326F09E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{4F52FD11-658E-A102-6CD3-7D7C16FFA15B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mephi.Cyber.AuthService.Client", "Client\Mephi.Cyber.AuthService.Client.csproj", "{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mephi.Cyber.AuthService.Server", "Server\Mephi.Cyber.AuthService.Server.csproj", "{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mephi.Cyber.AuthService.Core", "Shared\Mephi.Cyber.AuthService.Core.csproj", "{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C3889215-3D5A-CB03-ECFF-4F6DC5B94D00} = {2CB42F12-E813-91B3-7D11-3220E40BEF4A}
+		{3709CDD4-FCB8-79F8-CDF0-CAD25475F7A3} = {DAD03CFC-D5FA-AC94-41C7-9ABAB326F09E}
+		{6FEF6F67-21E3-45C9-EFFA-08CE0B513B13} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {027345F1-55EC-4E32-8B8B-E77CEB9DBEE0}
+	EndGlobalSection
+EndGlobal

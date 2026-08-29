@@ -1,0 +1,183 @@
+{
+  "Concepts": [
+    {
+      "Name": "Total",
+      "Attributes": [
+        {
+          "Name": "maxScore",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "100"
+        },
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "sum / (Lab1.maxScore \u002B Lab2.maxScore) * maxScore"
+        },
+        {
+          "Name": "lab2Score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "Lab2.score"
+        },
+        {
+          "Name": "lab1Score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "Lab1.score"
+        },
+        {
+          "Name": "sum",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "lab1Score \u002B lab2Score"
+        }
+      ]
+    },
+    {
+      "Name": "Exam2",
+      "Attributes": [
+        {
+          "Name": "amogus",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "SumDoubled.score"
+        }
+      ]
+    },
+    {
+      "Name": "Exam",
+      "Attributes": [
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "Exam2.score"
+        },
+        {
+          "Name": "amougs",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "Exam2.amogus"
+        }
+      ]
+    },
+    {
+      "Name": "Lab2",
+      "Attributes": [
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "codeQualityScore \u002B numberOfFeatures * 10"
+        },
+        {
+          "Name": "maxScore",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "40"
+        },
+        {
+          "Name": "codeQualityScore",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "numberOfFeatures",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        }
+      ]
+    },
+    {
+      "Name": "Lab1",
+      "Attributes": [
+        {
+          "Name": "testsScore",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "theoryScore",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "maxScore",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "30"
+        },
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "testsScore \u002B theoryScore"
+        }
+      ]
+    },
+    {
+      "Name": "SumDoubled",
+      "Attributes": [
+        {
+          "Name": "addition",
+          "Type": "Int",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "score",
+          "Type": "Int",
+          "IsComputable": true,
+          "Expression": "Lab1.score * 2 \u002B Lab2.score * 2 \u002B addition"
+        }
+      ]
+    },
+    {
+      "Name": "Student",
+      "Attributes": [
+        {
+          "Name": "id",
+          "Type": "UUID",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "firstName",
+          "Type": "String",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "middleName",
+          "Type": "String",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "lastName",
+          "Type": "String",
+          "IsComputable": false,
+          "Expression": null
+        },
+        {
+          "Name": "birthDate",
+          "Type": "DateTime",
+          "IsComputable": false,
+          "Expression": null
+        }
+      ]
+    }
+  ]
+}

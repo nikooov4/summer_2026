@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <title>LMS - Система управления обучением</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="icon" href="favicon.png" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/lms-styles.css" />
+    <link rel="stylesheet" href="LMSDashboardBlazor.styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <div id="blazor-error-ui">
+        Произошла ошибка.
+        <a href="" class="reload">Обновить</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+
+    <script>
+        window.lmsAuth = {
+            getToken: function (key) { return window.localStorage.getItem(key); },
+            setToken: function (key, value) { window.localStorage.setItem(key, value); },
+            removeToken: function (key) { window.localStorage.removeItem(key); }
+        };
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

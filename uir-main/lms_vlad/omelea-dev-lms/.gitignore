@@ -1,0 +1,12 @@
+*.log
+*.cache
+obj/*
+bin/*
+*.json
+*.dll
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo

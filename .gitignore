@@ -1,0 +1,26 @@
+# Local toolchains and installers
+.dotnet8/
+dotnet-install.ps1
+**/.dotnet/
+**/.templateengine/
+
+# Build and IDE output
+**/bin/
+**/obj/
+**/artifacts/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/node_modules/
+
+# Browser automation profiles and disposable visual checks
+**/browser_profiles/
+document_work/rendered_presentations/
+document_work/contact-*.png
+document_work/report-check-*.png
+document_work/example-*.png
+
+# Temporary files
+**/~$*
+*.tmp
+*.log
