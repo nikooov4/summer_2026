@@ -19,6 +19,11 @@ document_work/rendered_presentations/
 document_work/contact-*.png
 document_work/report-check-*.png
 document_work/example-*.png
+document_work/review-*.png
+document_work/rendered_reports_v2/
+document_work/rendered_presentations_v3/
+document_work/rendered_presentations_v4/
+document_work/__pycache__/
 
 # Temporary files
 **/~$*
