@@ -1,0 +1,48 @@
+{
+  "schema": "attendance_ocr_smoke_manifest",
+  "version": 1,
+  "dataset_id": "smoke_v1_synthetic",
+  "description": "Small non-PII smoke dataset for OCR quality loop checks.",
+  "privacy": {
+    "pii_policy": "No real student full names or raw real attendance photos are stored in this repository.",
+    "allowed_in_repo": [
+      "synthetic images",
+      "anonymized or pseudonymous full names",
+      "non-sensitive lesson metadata"
+    ],
+    "real_data_rule": "Real photos and identity mapping tables must stay outside git-controlled project files."
+  },
+  "samples": [
+    {
+      "image_id": "demo_attendance_sheet",
+      "image_path": "examples/demo_attendance_sheet.png",
+      "source": "synthetic",
+      "lesson": {
+        "lesson_id": "lesson_smoke_001",
+        "date": "2026-05-20",
+        "subject": "Тестовое занятие",
+        "group": "DEMO-01",
+        "teacher_id": "teacher_demo"
+      },
+      "roster": [
+        {
+          "student_id": "student_001",
+          "full_name": "Ivan Smirnov"
+        },
+        {
+          "student_id": "student_002",
+          "full_name": "Maria Petrova"
+        },
+        {
+          "student_id": "student_003",
+          "full_name": "Sergey Orlov"
+        }
+      ],
+      "quality_tags": [
+        "synthetic",
+        "clean_scan"
+      ],
+      "notes": "Repository-safe synthetic example used for smoke validation."
+    }
+  ]
+}

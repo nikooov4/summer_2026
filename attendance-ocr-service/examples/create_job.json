@@ -1,0 +1,9 @@
+{
+  "image_ids": ["demo_attendance_sheet_001"],
+  "lesson": {
+    "date": "2026-05-20",
+    "subject": "Software Engineering",
+    "group": "PI-101",
+    "teacher_id": "teacher_demo"
+  }
+}

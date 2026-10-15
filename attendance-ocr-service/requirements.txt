@@ -1,0 +1,16 @@
+fastapi
+httpx
+Levenshtein
+numpy
+opencv-python
+pandas
+pillow
+pillow-heif
+pytest
+python-multipart
+scikit-learn
+torch
+torchvision
+transformers
+uvicorn[standard]
+openpyxl

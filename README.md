@@ -116,11 +116,11 @@ To stop the project database after stopping the API:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-database.ps1 -Stop
 ```
 
-The supplied `attendance-ocr-service` directory is currently a separate Git
-repository. Its integration changes have not been committed automatically.
-Before publishing, explicitly choose a submodule with a pushed service commit,
-or vendor its source files. Do not blindly `git add` an embedded repository:
-that can record a Git link without making the service source available to clones.
+The `attendance-ocr-service` source and integration changes are included as
+ordinary files, not a submodule. Upstream provenance is recorded in
+`attendance-ocr-service/UPSTREAM.md`. A nested `.git` on the original development
+computer is retained locally but is not needed by clones. Virtual environments,
+runtime databases, uploaded images and model weights are not published.
 
 ## Checks
 

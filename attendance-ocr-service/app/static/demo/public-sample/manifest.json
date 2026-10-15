@@ -1,0 +1,31 @@
+{
+  "mode": "demo",
+  "lesson": {
+    "lesson_id": "demo-public-sample-2026-05-20",
+    "date": "2026-05-20",
+    "subject": "Software Engineering",
+    "group": "PI-101"
+  },
+  "files": [
+    {
+      "filename": "sample_sheet_front.png",
+      "url": "/static/demo/public-sample/sample_sheet_front.png"
+    },
+    {
+      "filename": "sample_sheet_back.png",
+      "url": "/static/demo/public-sample/sample_sheet_back.png"
+    }
+  ],
+  "roster": "public_synthetic_attendance.csv",
+  "pair_summary": "public_pair_summary.csv",
+  "artifacts": {
+    "csv": "/static/demo/public-sample/public_synthetic_attendance.csv"
+  },
+  "title": "Public OCR attendance sample",
+  "description": "synthetic PI-101 sheet pair",
+  "expected": {
+    "source_date": "20-05-2026",
+    "recognized_unique_students": 5
+  },
+  "note": "Synthetic sample data for public demo and tests."
+}

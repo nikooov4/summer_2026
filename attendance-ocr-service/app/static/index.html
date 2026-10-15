@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendo · Успеваемость</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="page" aria-label="Attendo">
+      <nav class="top-nav" aria-label="Навигация">
+        <div class="nav-left">
+          <img class="logo" src="/static/assets/attendo-logo.png" alt="Attendo" />
+          <button class="round-button" id="themeButton" type="button" aria-label="Тема">◑</button>
+        </div>
+        <div class="nav-menu" aria-label="Разделы">
+          <button type="button">Профиль</button>
+          <button type="button">Расписание</button>
+          <button type="button">Группы</button>
+          <button class="active" type="button">Успеваемость</button>
+          <button type="button">Настройки</button>
+        </div>
+      </nav>
+
+      <header class="title-card">
+        <h1>Успеваемость студентов</h1>
+        <div class="title-actions">
+          <button class="outline-button demo-case-button" id="demoCaseButton" type="button">Демо-кейс</button>
+          <button class="orange-button upload-open" id="openUploadButton" type="button">
+            <span class="camera-icon" aria-hidden="true"></span>
+            Загрузить фото
+          </button>
+          <button class="outline-button export-button" id="exportButton" type="button" disabled>
+            <span aria-hidden="true">⇩</span>
+            Экспорт
+          </button>
+        </div>
+      </header>
+
+      <section class="grade-card" aria-label="Успеваемость студентов">
+        <div class="grade-toolbar">
+          <div class="discipline-block">
+            <span>Дисциплина</span>
+            <div class="discipline-tabs">
+              <button class="active" type="button">Algorithms</button>
+              <button type="button">OCR</button>
+              <button type="button">Databases</button>
+              <button type="button">ML</button>
+              <button type="button">Software</button>
+            </div>
+          </div>
+          <div class="week-block">
+            <button class="round-button" type="button" aria-label="Предыдущая неделя">‹</button>
+            <strong>18 май — 24 май 2026</strong>
+            <button class="round-button" type="button" aria-label="Следующая неделя">›</button>
+            <em>Нажмите на ячейку для изменения</em>
+          </div>
+        </div>
+
+        <div class="legend" aria-label="Легенда">
+          <span><b class="ok">✓</b> — присутствовал</span>
+          <span><b class="bad">Н</b> — не явился</span>
+          <span><b class="plus">+</b> — активность</span>
+          <span><b class="minus">-</b> — замечание</span>
+          <span><b class="score">42</b> — произвольные баллы</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="grade-table">
+            <thead>
+              <tr>
+                <th>Студент / Группа</th>
+                <th>Пн 18.05</th>
+                <th>Вт 19.05</th>
+                <th>Ср 20.05</th>
+                <th>Чт 21.05</th>
+                <th>Пт 22.05</th>
+                <th>Сб 23.05</th>
+                <th>Вс 24.05</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+              <tr>
+                <th><span>Ivan Smirnov</span><small>PI-101</small></th>
+                <td><button class="mark present" type="button">✓</button></td>
+                <td>·</td>
+                <td><button class="mark activity" type="button">+</button></td>
+                <td>·</td>
+                <td>·</td>
+                <td><button class="mark score-mark" type="button">30</button></td>
+                <td>·</td>
+              </tr>
+              <tr>
+                <th><span>Maria Petrova</span><small>PI-101</small></th>
+                <td>·</td>
+                <td><button class="mark absent" type="button">Н</button></td>
+                <td>·</td>
+                <td>·</td>
+                <td>·</td>
+                <td>·</td>
+                <td>·</td>
+              </tr>
+              <tr>
+                <th><span>Alex Carter</span><small>PI-202</small></th>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+              <tr>
+                <th><span>Sergey Orlov</span><small>PI-101</small></th>
+                <td><button class="mark note" type="button">-</button></td>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+              <tr>
+                <th><span>Pavel Lebedev</span><small>PI-101</small></th>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+              <tr>
+                <th><span>Elena Morozova</span><small>PI-101</small></th>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+              <tr>
+                <th><span>Dmitry Sokolov</span><small>PI-101</small></th>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+              <tr>
+                <th><span>Olga Kuznetsova</span><small>PI-101</small></th>
+                <td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="footer-card">
+        <div>
+          <strong>Attendo - Система управления посещаемостью</strong>
+          <span>© 2026 Public demo build.</span>
+        </div>
+        <nav aria-label="Ссылки">
+          <button type="button">О приложении</button>
+          <button type="button">Поддержка</button>
+          <button type="button">Конфиденциальность</button>
+        </nav>
+      </footer>
+    </main>
+
+    <div class="modal" id="uploadModal" aria-modal="true" role="dialog" aria-labelledby="uploadTitle">
+      <div class="modal-backdrop" data-close-modal></div>
+      <section class="upload-dialog">
+        <h2 id="uploadTitle">Загрузить листок посещаемости</h2>
+        <p>Загрузите фотографию бумажного листка — AI автоматически распознает данные и заполнит таблицу.</p>
+        <div class="demo-case-meta" id="demoCaseMeta" hidden></div>
+        <label class="dropzone" id="dropzone" for="imageInput">
+          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/*" multiple />
+          <span class="dropzone-empty" id="dropzoneEmpty">
+            <span class="drop-icon" aria-hidden="true"></span>
+            <span>
+              <strong id="selectedFileName">Нажмите или перетащите файлы</strong>
+              <small>PNG, JPG до 10 МБ каждый</small>
+            </span>
+          </span>
+          <span class="preview-grid" id="previewGrid" hidden></span>
+        </label>
+        <div class="modal-status" id="statusText"></div>
+        <div class="modal-actions">
+          <button class="outline-button" id="cancelUploadButton" type="button">Отмена</button>
+          <button class="orange-button" id="processUploadButton" type="button">Обработать</button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="review-drawer" id="reviewDrawer" aria-label="OCR результат" hidden>
+      <div class="review-head">
+        <strong>OCR результат</strong>
+        <button id="closeReviewButton" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="summary-grid" id="summaryGrid">
+        <div><strong>0</strong><span>зачтено</span></div>
+        <div><strong>0</strong><span>проверить</span></div>
+        <div><strong>0</strong><span>отсутствуют</span></div>
+        <div><strong>0</strong><span>не сопоставлено</span></div>
+        <div><strong>0</strong><span>подтверждено</span></div>
+      </div>
+      <div class="student-list" id="studentList"></div>
+      <div class="review-actions">
+        <button id="confirmButton" class="outline-button" type="button" disabled>Подтвердить</button>
+      </div>
+      <details>
+        <summary>JSON контракта</summary>
+        <pre id="jsonOutput">{}</pre>
+      </details>
+    </aside>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

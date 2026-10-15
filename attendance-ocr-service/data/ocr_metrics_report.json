@@ -1,0 +1,32 @@
+{
+  "dataset_id": "smoke_v1_synthetic",
+  "sample_count": 1,
+  "totals": {
+    "tp": 3,
+    "fp": 0,
+    "fn": 0,
+    "candidate_count": 3,
+    "needs_review_count": 0
+  },
+  "metrics": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "needs_review_rate": 0.0,
+    "latency_ms_avg": null
+  },
+  "samples": [
+    {
+      "image_id": "demo_attendance_sheet",
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "needs_review_rate": 0.0,
+      "false_positive_names": [],
+      "missed_names": []
+    }
+  ]
+}

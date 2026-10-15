@@ -1,0 +1,27 @@
+{
+  "schema": "attendance_ocr_smoke_ground_truth",
+  "version": 1,
+  "dataset_id": "smoke_v1_synthetic",
+  "manifest_path": "examples/smoke_dataset_manifest.json",
+  "samples": [
+    {
+      "image_id": "demo_attendance_sheet",
+      "expected_present": [
+        {
+          "student_id": "student_001",
+          "full_name": "Ivan Smirnov"
+        },
+        {
+          "student_id": "student_002",
+          "full_name": "Maria Petrova"
+        },
+        {
+          "student_id": "student_003",
+          "full_name": "Sergey Orlov"
+        }
+      ],
+      "expected_absent": [],
+      "notes": "Synthetic sheet; no real attendance fact is encoded."
+    }
+  ]
+}
