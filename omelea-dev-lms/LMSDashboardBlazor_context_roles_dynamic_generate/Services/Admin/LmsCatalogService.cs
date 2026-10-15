@@ -1,6 +1,7 @@
 using LMSDashboardBlazor.Models;
 using System.Text;
 using System.Text.Json;
+using LMSDashboardBlazor.Models.Attendance;
 
 namespace LMSDashboardBlazor.Services.Admin;
 
@@ -75,6 +76,14 @@ public sealed class LmsCatalogService
     public IReadOnlyList<LmsUserModel> Users => users;
     public IReadOnlyList<LmsCourseModel> Courses => courses;
     public IReadOnlyList<LmsEnrollmentModel> Enrollments => enrollments;
+
+    public void Load(IEnumerable<LmsUserModel> loadedUsers, IEnumerable<LmsCourseModel> loadedCourses, IEnumerable<LmsEnrollmentModel> loadedEnrollments)
+    {
+        users.Clear(); users.AddRange(loadedUsers);
+        courses.Clear(); courses.AddRange(loadedCourses);
+        enrollments.Clear(); enrollments.AddRange(loadedEnrollments);
+        Changed?.Invoke();
+    }
 
     public LmsUserModel? GetUserByUsername(string? username)
     {
@@ -205,7 +214,9 @@ public sealed class LmsCatalogService
         }
 
         return enrollments
-            .FirstOrDefault(enrollment => enrollment.UserId == user.Id && enrollment.CourseId == courseId)
+            .Where(enrollment => enrollment.UserId == user.Id && enrollment.CourseId == courseId)
+            .OrderBy(enrollment => enrollment.Role switch { LmsCourseRole.Teacher => 0, LmsCourseRole.Assistant => 1, LmsCourseRole.Curator => 2, _ => 3 })
+            .FirstOrDefault()
             ?.Role;
     }
 
@@ -236,9 +247,48 @@ public sealed class LmsCatalogService
         Changed?.Invoke();
     }
 
+    public (int Created, int Enrolled) ImportOcrStudents(string? actor, string courseId, IEnumerable<OcrImportRow> rows)
+    {
+        if (!IsAdmin(actor)) throw new InvalidOperationException("Импорт доступен только администратору.");
+        if (GetCourse(courseId) is null) throw new InvalidOperationException("Курс не найден.");
+        var selected = rows.Where(row => row.Include).ToList();
+        if (selected.Count == 0) throw new InvalidOperationException("Выберите хотя бы одну строку.");
+        var pendingUsers = new List<LmsUserModel>();
+        var pendingEnrollments = new List<LmsEnrollmentModel>();
+        var ids = new HashSet<string>();
+        var logins = users.Select(user => user.Username).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var newNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in selected)
+        {
+            LmsUserModel user;
+            if (row.StudentId == "__new")
+            {
+                var fullName = row.FullName.Trim();
+                var login = row.Username.Trim();
+                if (fullName.Length < 3 || fullName.Length > 200 || login.Length < 1 || login.Length > 100 || login.Any(char.IsWhiteSpace))
+                    throw new InvalidOperationException("Проверьте ФИО и логины новых студентов (логин без пробелов).");
+                if (!logins.Add(login)) throw new InvalidOperationException($"Логин {login} уже используется.");
+                if (!newNames.Add(fullName)) throw new InvalidOperationException("В списке есть повторяющиеся ФИО новых студентов.");
+                user = new LmsUserModel { Username = login, FullName = fullName, RecordBookNumber = row.RecordBookNumber.Trim() };
+                pendingUsers.Add(user);
+            }
+            else user = GetUser(row.StudentId) ?? throw new InvalidOperationException("Выберите пользователя для каждой строки.");
+            if (!ids.Add(user.Id)) throw new InvalidOperationException("Один пользователь выбран несколько раз.");
+            if (!enrollments.Any(item => item.UserId == user.Id && item.CourseId == courseId && item.Role == LmsCourseRole.Student))
+                pendingEnrollments.Add(new LmsEnrollmentModel { UserId = user.Id, CourseId = courseId, Role = LmsCourseRole.Student });
+        }
+        // Validate the whole batch before changing the catalog or firing synchronization.
+        users.AddRange(pendingUsers);
+        enrollments.AddRange(pendingEnrollments);
+        Changed?.Invoke();
+        return (pendingUsers.Count, pendingEnrollments.Count);
+    }
+
     public void ToggleAdmin(string userId)
     {
         var user = GetUser(userId) ?? throw new InvalidOperationException("Пользователь не найден.");
+        if (user.IsAdmin && users.Count(item => item.IsAdmin) == 1)
+            throw new InvalidOperationException("Нельзя снять права последнего администратора.");
         user.IsAdmin = !user.IsAdmin;
         Changed?.Invoke();
     }
@@ -497,7 +547,7 @@ public sealed class LmsCatalogService
 
         if (users.All(user => !user.IsAdmin))
         {
-            users.First().IsAdmin = true;
+            throw new InvalidOperationException("В каталоге должен оставаться хотя бы один администратор.");
         }
 
         Changed?.Invoke();

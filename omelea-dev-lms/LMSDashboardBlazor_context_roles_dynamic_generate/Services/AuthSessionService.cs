@@ -1,93 +1,111 @@
-using System.Text;
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.JSInterop;
+using LMSDashboardBlazor.Models;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 
 namespace LMSDashboardBlazor.Services;
 
-public class AuthSessionService
+public sealed class AuthSessionService(HttpClient http, IConfiguration configuration)
 {
-    private const string TokenKey = "lms.auth.token";
-    private readonly IJSRuntime _jsRuntime;
-
     public event Action? Changed;
+    public SessionUser? CurrentUser { get; private set; }
+    private Task? loading;
+    private bool initialized;
+    public Uri Endpoint(string path) => new(new Uri((configuration["LmsApi:BaseUrl"] ?? "http://localhost:8085").TrimEnd('/') + "/"), path);
 
-    public AuthSessionService(IJSRuntime jsRuntime)
+    public async Task RefreshAsync()
     {
-        _jsRuntime = jsRuntime;
+        using var request = new HttpRequestMessage(HttpMethod.Get, Endpoint("api/auth/me"));
+        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+        using var response = await http.SendAsync(request);
+        if (response.StatusCode == HttpStatusCode.Unauthorized) CurrentUser = null;
+        else { await EnsureSuccess(response); CurrentUser = await response.Content.ReadFromJsonAsync<SessionUser>(); }
+        initialized = true;
     }
 
-    public async Task<string?> GetTokenAsync()
+    private async Task Load()
     {
-        return await _jsRuntime.InvokeAsync<string?>("lmsAuth.getToken", TokenKey);
+        if (initialized) return;
+        loading ??= RefreshAsync();
+        try { await loading; } finally { loading = null; }
+    }
+    public async Task<bool> IsAuthenticatedAsync() { await Load(); return CurrentUser is not null; }
+    public async Task<string?> GetUsernameAsync() { await Load(); return CurrentUser?.Username; }
+
+    public async Task LoginAsync(string username, string password)
+    {
+        using var response = await SendAsync(HttpMethod.Post, "api/auth/login", new LoginRequest(username, password));
+        await AcceptLogin(response);
     }
 
-    public async Task SetTokenAsync(string token)
+    public async Task<bool> IsDemoLoginEnabledAsync()
     {
-        await _jsRuntime.InvokeVoidAsync("lmsAuth.setToken", TokenKey, token);
+        using var response = await SendAsync(HttpMethod.Get, "api/auth/options");
+        await EnsureSuccess(response);
+        return (await response.Content.ReadFromJsonAsync<AuthOptionsResponse>())?.DemoLoginEnabled == true;
+    }
+
+    public async Task DemoLoginAsync(string username)
+    {
+        using var response = await SendAsync(HttpMethod.Post, "api/auth/demo/" + Uri.EscapeDataString(username));
+        await AcceptLogin(response);
+    }
+
+    private async Task AcceptLogin(HttpResponseMessage response)
+    {
+        await EnsureSuccess(response);
+        CurrentUser = await response.Content.ReadFromJsonAsync<SessionUser>(); initialized = true;
         Changed?.Invoke();
     }
 
     public async Task ClearAsync()
     {
-        await _jsRuntime.InvokeVoidAsync("lmsAuth.removeToken", TokenKey);
-        Changed?.Invoke();
+        using var response = await SendAsync(HttpMethod.Post, "api/auth/logout");
+        if (response.StatusCode != HttpStatusCode.Unauthorized) await EnsureSuccess(response);
+        CurrentUser = null; initialized = true; Changed?.Invoke();
     }
 
-    public async Task<bool> IsAuthenticatedAsync()
+    public async Task ChangePasswordAsync(string current, string password)
     {
-        var token = await GetTokenAsync();
-        return !string.IsNullOrWhiteSpace(token);
+        using var response = await SendAsync(HttpMethod.Post, "api/auth/change-password", new PasswordChangeRequest(current, password));
+        await EnsureSuccess(response);
+        CurrentUser = null; initialized = true; Changed?.Invoke();
     }
 
-    public async Task<string?> GetUsernameAsync()
+    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body = null, CancellationToken cancellation = default)
     {
-        var token = await GetTokenAsync();
-        return GetUsernameFromToken(token);
+        using var request = new HttpRequestMessage(method, Endpoint(path));
+        if (body is not null) request.Content = JsonContent.Create(body, body.GetType());
+        return await SendRequestAsync(request, cancellation);
     }
 
-    public string? GetUsernameFromToken(string? token)
+    public async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, CancellationToken cancellation = default)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+        if (request.Method != HttpMethod.Get && request.Method != HttpMethod.Head)
         {
-            return null;
+            using var csrfRequest = new HttpRequestMessage(HttpMethod.Get, Endpoint("api/auth/csrf"));
+            csrfRequest.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+            using var csrf = await http.SendAsync(csrfRequest, cancellation);
+            await EnsureSuccess(csrf);
+            var token = await csrf.Content.ReadFromJsonAsync<CsrfTokenResponse>(cancellationToken: cancellation);
+            request.Headers.Add("X-CSRF-TOKEN", token?.Token ?? throw new InvalidOperationException("Не получен токен проверки запроса."));
         }
+        return await http.SendAsync(request, cancellation);
+    }
 
+    public static async Task EnsureSuccess(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode) return;
+        if (response.StatusCode == HttpStatusCode.Unauthorized) throw new SessionExpiredException();
+        if ((int)response.StatusCode == 429) throw new InvalidOperationException("Слишком много попыток. Повторите позже.");
         try
         {
-            var parts = token.Split('.');
-            if (parts.Length < 2)
-            {
-                return null;
-            }
-
-            var payload = parts[1]
-                .Replace('-', '+')
-                .Replace('_', '/');
-
-            payload = payload.PadRight(payload.Length + ((4 - payload.Length % 4) % 4), '=');
-            var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-            using var document = JsonDocument.Parse(json);
-
-            if (document.RootElement.TryGetProperty("username", out var username))
-            {
-                return username.GetString();
-            }
-
-            if (document.RootElement.TryGetProperty("unique_name", out var uniqueName))
-            {
-                return uniqueName.GetString();
-            }
-
-            if (document.RootElement.TryGetProperty("name", out var name))
-            {
-                return name.GetString();
-            }
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (document.RootElement.TryGetProperty("message", out var message)) throw new InvalidOperationException(message.GetString());
         }
-        catch
-        {
-            return null;
-        }
-
-        return null;
+        catch (JsonException) { }
+        throw new InvalidOperationException($"Сервер вернул ошибку {(int)response.StatusCode}.");
     }
 }

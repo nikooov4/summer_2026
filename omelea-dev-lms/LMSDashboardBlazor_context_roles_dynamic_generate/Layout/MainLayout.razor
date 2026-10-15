@@ -35,6 +35,7 @@
                 @if (_isAuthenticated)
                 {
                     <span class="user-name">@(_username ?? "Пользователь")</span>
+                    <a class="user-action-button" href="/account/security" title="Изменить пароль" aria-label="Изменить пароль"><i class="fas fa-key" aria-hidden="true"></i></a>
                     <button class="user-action-button" @onclick="Logout">Выйти</button>
                 }
                 else

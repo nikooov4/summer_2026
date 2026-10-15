@@ -1,0 +1,48 @@
+@implements IDisposable
+@inject PersistentLmsService Persistence
+@inject AuthSessionService Auth
+@inject NavigationManager Navigation
+
+@if (error is not null)
+{
+    <section class="welcome-section statements-compact-hero">
+        <div class="welcome-content">
+            <h1>Данные LMS недоступны</h1>
+            <p role="alert">@error</p>
+            <div class="statements-actions">
+                <button class="statement-primary-button" @onclick="Load"><i class="fas fa-rotate"></i> Повторить</button>
+                <button class="statement-secondary-button" @onclick="Logout">Войти заново</button>
+            </div>
+        </div>
+    </section>
+}
+else if (!ready)
+{
+    <section class="welcome-section statements-compact-hero"><div class="welcome-content"><h1>Загрузка данных...</h1></div></section>
+}
+else { @ChildContent }
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private bool ready;
+    private string? error;
+    private bool disposed;
+    protected override void OnInitialized() => Auth.Changed += OnAuthChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await Load(); }
+    private async void OnAuthChanged() { if (!disposed) await InvokeAsync(Load); }
+    private async Task Load()
+    {
+        ready = false; error = null; StateHasChanged();
+        try
+        {
+            await Persistence.LoadAsync(); ready = true;
+            if (Auth.CurrentUser?.MustChangePassword == true && !Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath.Equals("/account/security", StringComparison.OrdinalIgnoreCase))
+                Navigation.NavigateTo("/account/security", replace: true);
+        }
+        catch (HttpRequestException) { error = "Нет связи с БД. Проверьте запуск локального API и PostgreSQL."; }
+        catch (Exception exception) { error = exception.Message; }
+        if (!disposed) StateHasChanged();
+    }
+    private async Task Logout() { await Auth.ClearAsync(); Navigation.NavigateTo("/login"); }
+    public void Dispose() { disposed = true; Auth.Changed -= OnAuthChanged; }
+}

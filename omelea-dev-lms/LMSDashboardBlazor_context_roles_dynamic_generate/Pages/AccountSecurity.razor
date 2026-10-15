@@ -1,0 +1,34 @@
+@page "/account/security"
+@inject AuthSessionService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Пароль</PageTitle>
+<section class="welcome-section statements-compact-hero"><div class="welcome-content"><h1>Смена пароля</h1></div></section>
+<section class="dashboard-card" style="max-width: 560px">
+    <div class="card-content">
+        @if (Auth.CurrentUser?.MustChangePassword == true) { <p role="status">Необходимо сменить временный пароль.</p> }
+        <form @onsubmit="Save" @onsubmit:preventDefault="true" class="admin-form-grid">
+            <label class="statement-field"><span>Текущий пароль</span><input class="statement-input" type="password" autocomplete="current-password" required maxlength="128" @bind="current" /></label>
+            <label class="statement-field"><span>Новый пароль</span><input class="statement-input" type="password" autocomplete="new-password" required minlength="12" maxlength="128" @bind="password" /></label>
+            <label class="statement-field"><span>Повторите новый пароль</span><input class="statement-input" type="password" autocomplete="new-password" required minlength="12" maxlength="128" @bind="confirmation" /></label>
+            @if (error is not null) { <p role="alert">@error</p> }
+            <button class="statement-primary-button" disabled="@busy" type="submit">Изменить пароль</button>
+        </form>
+    </div>
+</section>
+
+@code {
+    private string current = "", password = "", confirmation = "";
+    private string? error;
+    private bool busy;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender && !await Auth.IsAuthenticatedAsync()) Navigation.NavigateTo("/login", replace: true); }
+    private async Task Save()
+    {
+        if (busy) return;
+        if (password != confirmation) { error = "Пароли не совпадают."; return; }
+        busy = true; error = null;
+        try { await Auth.ChangePasswordAsync(current, password); current = password = confirmation = ""; Navigation.NavigateTo("/login", replace: true); }
+        catch (Exception exception) { error = exception.Message; }
+        finally { busy = false; }
+    }
+}

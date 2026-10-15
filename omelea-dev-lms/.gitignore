@@ -3,6 +3,7 @@
 obj/*
 bin/*
 *.json
+!LMSDashboardBlazor_context_roles_dynamic_generate/wwwroot/appsettings.json
 *.dll
 bin/
 obj/

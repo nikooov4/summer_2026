@@ -2,6 +2,7 @@
 @using LMSDashboardBlazor.Models
 @using LMSDashboardBlazor.Services.Admin
 @inject LmsCatalogService CatalogService
+@inject PersistentLmsService Persistence
 @inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
 @inject NavigationManager NavigationManager
 
@@ -9,7 +10,7 @@
 {
     <section class="welcome-section statements-compact-hero">
         <div class="welcome-content">
-            <p class="statements-eyebrow">Тестовая админ-панель</p>
+            <p class="statements-eyebrow">Администрирование</p>
             <h1>Проверка доступа...</h1>
         </div>
     </section>
@@ -19,9 +20,9 @@ else if (!isAdmin)
     <section class="welcome-section statements-compact-hero">
         <div class="welcome-content statements-hero-content">
             <div>
-                <p class="statements-eyebrow">Тестовая админ-панель</p>
+                <p class="statements-eyebrow">Администрирование</p>
                 <h1>Нет прав администратора</h1>
-                <p class="welcome-text">Для проверки войдите демо-пользователем admin на странице авторизации.</p>
+                <p class="welcome-text">Для доступа необходима учётная запись администратора.</p>
             </div>
             <a class="statement-action-link" href="/login">На страницу входа</a>
         </div>
@@ -32,9 +33,9 @@ else
 <section class="welcome-section statements-compact-hero">
     <div class="welcome-content statements-hero-content">
         <div>
-            <p class="statements-eyebrow">Тестовая админ-панель</p>
+            <p class="statements-eyebrow">Администрирование</p>
             <h1>Каталог LMS</h1>
-            <p class="welcome-text">Управление пользователями, курсами и зачислениями для проверки ролей и журналов посещаемости.</p>
+            <p class="welcome-text">Пользователи, курсы и зачисления.</p>
         </div>
         <div class="statements-actions">
             <a class="statement-action-link secondary" href="/attendance">
@@ -53,6 +54,19 @@ else
 {
     <div class="@GetNoticeClass()" role="status">@statusMessage</div>
 }
+
+<section class="ocr-admin-section">
+    <label class="statement-field ocr-course-field">
+        <span>Курс для списка с фото</span>
+        <select class="statement-input" @bind="ocrCourseId">
+            @foreach (var course in CatalogService.Courses)
+            {
+                <option value="@course.Id">@course.Code (@course.GroupName)</option>
+            }
+        </select>
+    </label>
+    <OcrImport @key="ocrCourseId" CourseId="@ocrCourseId" Username="@username" AdminMode="true" OnApplied="StateHasChanged" />
+</section>
 
 <div class="admin-grid">
     <section class="dashboard-card">
@@ -77,8 +91,9 @@ else
                     <input type="checkbox" @bind="newIsAdmin" />
                     <span>Админ</span>
                 </label>
-                <button class="statement-primary-button" type="button" @onclick="AddUser">Добавить</button>
+                <button class="statement-primary-button" type="button" @onclick="AddUser">@(editingUserId is null ? "Добавить" : "Сохранить")</button>
             </div>
+            @if (editingUserId is not null) { <button class="statement-secondary-button" @onclick="CancelUserEdit">Отменить редактирование</button> }
 
             <div class="statement-table-wrap">
                 <table class="statement-table admin-table">
@@ -109,6 +124,7 @@ else
                                 </td>
                                 <td>@user.RecordBookNumber</td>
                                 <td class="admin-actions-cell">
+                                    <button class="statement-secondary-button" type="button" title="Редактировать пользователя" @onclick="() => EditUser(user)"><i class="fas fa-pen" aria-hidden="true"></i> Изменить</button>
                                     <button class="statement-secondary-button" type="button" @onclick="() => ToggleAdmin(user.Id)">
                                         @(user.IsAdmin ? "Снять админа" : "Сделать админом")
                                     </button>
@@ -120,6 +136,26 @@ else
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="dashboard-card">
+        <div class="card-header"><h2><i class="fas fa-key" aria-hidden="true"></i> Доступ пользователей</h2></div>
+        <div class="card-content">
+            <div class="admin-form-grid">
+                <label class="statement-field"><span>Учётная запись</span><select class="statement-input" @bind="credentialUserId">
+                    <option value="">Выберите пользователя</option>
+                    @foreach (var user in CatalogService.Users.Where(user => user.Username != username).OrderBy(user => user.FullName))
+                    { <option value="@user.Id">@user.FullName (@user.Username)</option> }
+                </select></label>
+                <label class="statement-field"><span>Новый пароль</span><input class="statement-input" type="password" autocomplete="new-password" minlength="12" maxlength="128" @bind="credentialPassword" /></label>
+                <label class="admin-check-field"><input type="checkbox" @bind="forcePasswordChange" /><span>Сменить пароль при входе</span></label>
+                <div class="statements-actions">
+                    <button class="statement-primary-button" disabled="@(saving || credentialUserId.Length == 0 || credentialPassword.Length < 12)" @onclick="SetUserPassword">Установить пароль</button>
+                    <button class="statement-secondary-button danger" disabled="@(saving || credentialUserId.Length == 0)" @onclick="() => SetUserAccess(false)">Заблокировать вход</button>
+                    <button class="statement-secondary-button" disabled="@(saving || credentialUserId.Length == 0)" @onclick="() => SetUserAccess(true)">Разрешить вход</button>
+                </div>
             </div>
         </div>
     </section>
@@ -174,8 +210,9 @@ else
                     <span>Аудитория</span>
                     <input class="statement-input" @bind="newRoom" />
                 </label>
-                <button class="statement-primary-button" type="button" @onclick="AddCourse">Добавить</button>
+                <button class="statement-primary-button" type="button" @onclick="AddCourse">@(editingCourseId is null ? "Добавить" : "Сохранить")</button>
             </div>
+            @if (editingCourseId is not null) { <button class="statement-secondary-button" @onclick="CancelCourseEdit">Отменить редактирование</button> }
 
             <div class="statement-table-wrap">
                 <table class="statement-table admin-table">
@@ -197,6 +234,7 @@ else
                                 <td>@course.GroupName</td>
                                 <td>@course.DefaultRoom</td>
                                 <td class="admin-actions-cell">
+                                    <button class="statement-secondary-button" type="button" title="Редактировать курс" @onclick="() => EditCourse(course)"><i class="fas fa-pen" aria-hidden="true"></i> Изменить</button>
                                     <button class="statement-secondary-button danger" type="button" @onclick="() => RemoveCourse(course.Id)">
                                         Удалить
                                     </button>
@@ -290,6 +328,8 @@ else
 @code {
     private bool ready;
     private bool isAdmin;
+    private string? username;
+    private string ocrCourseId = "";
     private string newUsername = string.Empty;
     private string newFullName = string.Empty;
     private string newRecordBook = string.Empty;
@@ -342,6 +382,7 @@ else
     {
         selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
         selectedCourseId = CatalogService.Courses.FirstOrDefault()?.Id ?? string.Empty;
+        ocrCourseId = selectedCourseId;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -357,40 +398,43 @@ else
             return;
         }
 
-        var username = await AuthSession.GetUsernameAsync();
+        username = await AuthSession.GetUsernameAsync();
         isAdmin = CatalogService.IsAdmin(username);
         ready = true;
         StateHasChanged();
     }
 
-    private void AddUser()
+    private async Task AddUser()
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.AddUser(newUsername, newFullName, newRecordBook, newIsAdmin);
+            var wasEditing = editingUserId is not null;
+            var login = newUsername.Trim();
+            await Persistence.ChangeCatalogAsync(new() { Kind=wasEditing ? "update-user" : "add-user", Id=editingUserId ?? "", Username=newUsername, FullName=newFullName, RecordBookNumber=newRecordBook, IsAdmin=newIsAdmin });
             newUsername = string.Empty;
             newFullName = string.Empty;
             newRecordBook = string.Empty;
             newIsAdmin = false;
-            selectedUserId = CatalogService.Users.Last().Id;
-            statusMessage = "Пользователь добавлен.";
+            selectedUserId = CatalogService.GetUserByUsername(login)!.Id;
+            editingUserId = null;
+            statusMessage = wasEditing ? "Пользователь обновлён." : "Пользователь добавлен. Для входа задайте ему пароль.";
         });
     }
 
-    private void ToggleAdmin(string userId)
+    private async Task ToggleAdmin(string userId)
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.ToggleAdmin(userId);
+            await Persistence.ChangeCatalogAsync(new() { Kind="toggle-admin", Id=userId });
             statusMessage = "Права администратора обновлены.";
         });
     }
 
-    private void RemoveUser(string userId)
+    private async Task RemoveUser(string userId)
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.RemoveUser(userId);
+            await Persistence.ChangeCatalogAsync(new() { Kind="remove-user", Id=userId });
             selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
             statusMessage = "Пользователь удален вместе с зачислениями.";
         });
@@ -408,73 +452,107 @@ else
             : "JSON-выгрузка пользователей сформирована.";
     }
 
-    private void ImportUsers()
+    private async Task ImportUsers()
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            var count = transferFormat == "csv"
-                ? CatalogService.ImportUsersCsv(transferPayload)
-                : CatalogService.ImportUsersJson(transferPayload);
+            var result = await Persistence.ChangeCatalogAsync(new() { Kind="import-users", Format=transferFormat, Payload=transferPayload });
+            var count = result.Count;
 
             selectedUserId = CatalogService.Users.FirstOrDefault()?.Id ?? string.Empty;
             statusMessage = $"Загружено или обновлено пользователей: {count}.";
         });
     }
 
-    private void AddCourse()
+    private async Task AddCourse()
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.AddCourse(newCourseCode, newCourseName, newGroupName, newRoom);
+            var wasEditing = editingCourseId is not null;
+            var code = newCourseCode.Trim();
+            await Persistence.ChangeCatalogAsync(new() { Kind=wasEditing ? "update-course" : "add-course", Id=editingCourseId ?? "", Code=newCourseCode, Name=newCourseName, GroupName=newGroupName, DefaultRoom=newRoom });
             newCourseCode = string.Empty;
             newCourseName = string.Empty;
             newGroupName = "Б23-504";
             newRoom = string.Empty;
-            selectedCourseId = CatalogService.Courses.Last().Id;
-            statusMessage = "Курс добавлен. Для него автоматически появится журнал посещаемости.";
+            selectedCourseId = CatalogService.Courses.Single(course => course.Code == code).Id;
+            editingCourseId = null;
+            statusMessage = wasEditing ? "Курс обновлён." : "Курс добавлен. Зачислите участников и создайте занятие в журнале.";
         });
     }
 
-    private void RemoveCourse(string courseId)
+    private async Task RemoveCourse(string courseId)
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.RemoveCourse(courseId);
+            await Persistence.ChangeCatalogAsync(new() { Kind="remove-course", Id=courseId });
             selectedCourseId = CatalogService.Courses.FirstOrDefault()?.Id ?? string.Empty;
+            if (ocrCourseId == courseId) ocrCourseId = selectedCourseId;
             statusMessage = "Курс удален вместе с зачислениями.";
         });
     }
 
-    private void AddEnrollment()
+    private async Task AddEnrollment()
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.AddEnrollment(selectedUserId, selectedCourseId, selectedRole);
+            await Persistence.ChangeCatalogAsync(new() { Kind="add-enrollment", UserId=selectedUserId, CourseId=selectedCourseId, Role=selectedRole });
             statusMessage = "Роль на курсе назначена.";
         });
     }
 
-    private void RemoveEnrollment(string enrollmentId)
+    private async Task RemoveEnrollment(string enrollmentId)
     {
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            CatalogService.RemoveEnrollment(enrollmentId);
+            await Persistence.ChangeCatalogAsync(new() { Kind="remove-enrollment", Id=enrollmentId });
             statusMessage = "Зачисление удалено.";
         });
     }
 
-    private void TryRun(Action action)
+    private bool saving;
+    private string? editingUserId, editingCourseId;
+    private void EditUser(LmsUserModel user)
     {
+        editingUserId=user.Id; newUsername=user.Username; newFullName=user.FullName; newRecordBook=user.RecordBookNumber; newIsAdmin=user.IsAdmin;
+    }
+    private void CancelUserEdit() { editingUserId=null; newUsername=newFullName=newRecordBook=""; newIsAdmin=false; }
+    private void EditCourse(LmsCourseModel course)
+    {
+        editingCourseId=course.Id; newCourseCode=course.Code; newCourseName=course.Name; newGroupName=course.GroupName; newRoom=course.DefaultRoom;
+    }
+    private void CancelCourseEdit() { editingCourseId=null; newCourseCode=newCourseName=newRoom=""; newGroupName="Б23-504"; }
+    private string credentialUserId = "", credentialPassword = "";
+    private bool forcePasswordChange = true;
+    private async Task SetUserPassword() => await TryRunAsync(async () =>
+    {
+        using var response = await AuthSession.SendAsync(HttpMethod.Post, $"api/users/{credentialUserId}/password", new PasswordSetRequest(credentialPassword, forcePasswordChange));
+        await AuthSessionService.EnsureSuccess(response);
+        credentialPassword = "";
+        statusMessage = "Пароль установлен. Старые сессии пользователя завершены.";
+    });
+    private async Task SetUserAccess(bool enabled) => await TryRunAsync(async () =>
+    {
+        using var response = await AuthSession.SendAsync(HttpMethod.Post, $"api/users/{credentialUserId}/access", new AccountAccessRequest(enabled));
+        await AuthSessionService.EnsureSuccess(response);
+        statusMessage = enabled ? "Вход разрешён." : "Вход заблокирован. Сессии завершены.";
+    });
+    private async Task TryRunAsync(Func<Task> action)
+    {
+        if (saving) return;
+        saving = true;
         try
         {
             statusIsError = false;
-            action();
+            await action();
+            isAdmin = CatalogService.IsAdmin(username);
         }
-        catch (InvalidOperationException exception)
+        catch (Exception exception)
         {
             statusIsError = true;
             statusMessage = exception.Message;
         }
+        finally { saving = false; }
     }
 
     private string GetNoticeClass()

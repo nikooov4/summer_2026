@@ -1,0 +1,229 @@
+@implements IDisposable
+@inject AttendanceOcrClient OcrClient
+@inject AttendanceService Attendance
+@inject LmsCatalogService Catalog
+@inject PersistentLmsService Persistence
+
+@if (IsAllowed)
+{
+    <details class="ocr-panel">
+        <summary><i class="fas fa-camera" aria-hidden="true"></i> @(AdminMode ? "Студенты с фото" : "Список с фото")</summary>
+        <div class="ocr-content">
+            <div class="ocr-controls">
+                <label class="statement-field">
+                    <span>Фото списка</span>
+                    <InputFile OnChange="SelectFile" accept="image/png,image/jpeg,.png,.jpg,.jpeg" disabled="@Busy" />
+                </label>
+                <label class="statement-field">
+                    <span>Режим OCR</span>
+                    <select class="statement-input" @bind="mode" disabled="@Busy">
+                        <option value="nasledie">Nasledie</option>
+                        <option value="legacy_v1">OCR v1</option>
+                        <option value="demo">Демонстрационный</option>
+                    </select>
+                </label>
+                <button type="button" class="statement-primary-button" disabled="@(Busy || bytes is null || Applied || Lesson?.IsCompleted == true)" @onclick="Recognize">
+                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> @(Busy ? "Обработка..." : "Распознать")
+                </button>
+                @if (Busy)
+                {
+                    <button type="button" class="statement-secondary-button" @onclick="Cancel"><i class="fas fa-xmark"></i> Отменить</button>
+                }
+            </div>
+            @if (mode == "demo")
+            {
+                <div class="statement-notice" role="status">Демо: сервис возвращает фиксированный пример, а не распознаёт выбранное фото.</div>
+            }
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="statement-notice @(isError ? "error" : "")" role="@(isError ? "alert" : "status")">@message</div>
+            }
+            @if (preview is not null)
+            {
+                <details class="ocr-preview"><summary>@filename</summary><img src="@preview" alt="Загруженное фото списка студентов" /></details>
+            }
+            @if (rows.Count > 0)
+            {
+                <div class="statement-table-wrap">
+                    <table class="statement-table ocr-table">
+                        <thead><tr><th>Выбор</th><th>Распознанная строка</th><th>Студент</th>@if (AdminMode) { <th>Новый пользователь</th> }</tr></thead>
+                        <tbody>
+                            @foreach (var row in rows)
+                            {
+                                <tr @key="row.DecisionId">
+                                    <td><input type="checkbox" @bind="row.Include" disabled="@(Busy || Applied)" aria-label="@($"Включить строку {row.SourceText}")" /></td>
+                                    <td><strong>@row.SourceText</strong><small class="ocr-confidence">Совпадение: @row.Confidence.ToString("P0")</small></td>
+                                    <td data-label="Студент">
+                                        <select class="statement-input" @bind="row.StudentId" disabled="@(Busy || Applied || !row.Include)" aria-label="@($"Студент для строки {row.SourceText}")">
+                                            <option value="">Не выбран</option>
+                                            @if (AdminMode) { <option value="__new">Создать студента</option> }
+                                            @foreach (var student in Roster)
+                                            {
+                                                <option value="@student.Id">@student.FullName (@student.Username)</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    @if (AdminMode)
+                                    {
+                                        <td data-label="Новый пользователь">
+                                            @if (row.StudentId == "__new")
+                                            {
+                                                <div class="ocr-new-user">
+                                                    <input class="statement-input" @bind="row.FullName" disabled="@(Busy || Applied || !row.Include)" aria-label="ФИО нового студента" placeholder="ФИО" maxlength="200" />
+                                                    <input class="statement-input" @bind="row.Username" disabled="@(Busy || Applied || !row.Include)" aria-label="Логин нового студента" placeholder="Логин" maxlength="100" />
+                                                    <input class="statement-input" @bind="row.RecordBookNumber" disabled="@(Busy || Applied || !row.Include)" aria-label="Номер зачётной книжки" placeholder="Зачётная книжка" />
+                                                </div>
+                                            }
+                                            else { <span>Без изменения профиля</span> }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="ocr-apply-row">
+                    <span>Выбрано: @rows.Count(row => row.Include) из @rows.Count</span>
+                    @if (!AdminMode)
+                    {
+                        <label><input type="checkbox" @bind="replaceExisting" disabled="@(Busy || Applied)" /> Заменить ранее выставленные отметки</label>
+                    }
+                    <button type="button" class="statement-primary-button" disabled="@(Busy || Applied || !CanApply || Lesson?.IsCompleted == true)" @onclick="Apply">
+                        <i class="fas fa-check" aria-hidden="true"></i> @(AdminMode ? "Создать и зачислить" : "Отметить присутствие")
+                    </button>
+                </div>
+            }
+        </div>
+    </details>
+}
+
+@code {
+    [Parameter] public string CourseId { get; set; } = "";
+    [Parameter] public string? LessonId { get; set; }
+    [Parameter] public string? Username { get; set; }
+    [Parameter] public bool AdminMode { get; set; }
+    [Parameter] public EventCallback OnApplied { get; set; }
+    private const long MaxFileBytes = 12 * 1024 * 1024;
+    private readonly CancellationTokenSource lifetime = new();
+    private CancellationTokenSource? operation;
+    private byte[]? bytes;
+    private string filename = "";
+    private string contentType = "";
+    private string? preview;
+    private string mode = "nasledie";
+    private string? message;
+    private bool isError;
+    private bool Busy;
+    private bool Applied;
+    private bool replaceExisting;
+    private bool disposed;
+    private string? jobId;
+    private List<OcrImportRow> rows = [];
+    private AttendanceLessonModel? Lesson => Attendance.Data.Lessons.FirstOrDefault(item => item.Id == LessonId);
+    private bool IsAllowed => AdminMode ? Catalog.IsAdmin(Username) :
+        Lesson is not null && !Lesson.IsCancelled && Lesson.CourseId == CourseId && Attendance.CanEditLesson(Username, Lesson);
+    private IReadOnlyList<LmsUserModel> Roster => AdminMode ? Catalog.Users :
+        Lesson?.Roster.Select(student => new LmsUserModel { Id=student.Id, FullName=student.FullName, RecordBookNumber=student.RecordBookNumber, Username=Catalog.GetUser(student.Id)?.Username ?? student.RecordBookNumber }).ToList() ?? [];
+    private bool CanApply => rows.Any(row => row.Include) && rows.Where(row => row.Include).All(row =>
+        !string.IsNullOrEmpty(row.StudentId) && (row.StudentId != "__new" ||
+            (!string.IsNullOrWhiteSpace(row.FullName) && !string.IsNullOrWhiteSpace(row.Username))));
+
+    private async Task SelectFile(InputFileChangeEventArgs args)
+    {
+        rows.Clear(); jobId = null; Applied = false; bytes = null; preview = null; message = null;
+        try
+        {
+            var file = args.File;
+            var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (file.Size == 0 || file.Size > MaxFileBytes || extension is not (".png" or ".jpg" or ".jpeg"))
+                throw new InvalidOperationException("Выберите JPG или PNG размером до 12 МБ.");
+            filename = file.Name;
+            contentType = extension == ".png" ? "image/png" : "image/jpeg";
+            using var stream = file.OpenReadStream(MaxFileBytes, lifetime.Token);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, lifetime.Token);
+            bytes = buffer.ToArray();
+            preview = $"data:{contentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error) { ShowError(error); }
+    }
+
+    private async Task Recognize()
+    {
+        if (bytes is null || !IsAllowed || Busy) return;
+        var course = Catalog.GetCourse(CourseId);
+        if (course is null) { ShowError(new InvalidOperationException("Курс не найден.")); return; }
+        BeginOperation();
+        rows.Clear(); Applied = false; jobId = null;
+        try
+        {
+            var job = await OcrClient.RecognizeAsync(bytes, filename, contentType, mode, course, Lesson,
+                Roster.ToArray(), Catalog.GetUserByUsername(Username)?.Id, operation!.Token);
+            operation.Token.ThrowIfCancellationRequested();
+            jobId = job.JobId;
+            rows = job.Result!.Students.Select(student => new OcrImportRow
+            {
+                SourceText = student.SourceText,
+                FullName = student.SourceText,
+                StudentId = student.StudentId ?? (AdminMode ? "__new" : ""),
+                Username = $"ocr_{Guid.NewGuid():N}"[..12],
+                Confidence = student.Confidence,
+                DecisionId = job.Review?.Decisions.FirstOrDefault(decision =>
+                    decision.RegionIds.Intersect(student.RegionIds).Any())?.DecisionId ?? ""
+            }).ToList();
+            if (rows.Count == 0) message = "Строки с ФИО не найдены. Выберите другое фото.";
+        }
+        catch (OperationCanceledException) { if (!disposed) message = "Обработка отменена. Отметки и каталог не изменены."; }
+        catch (Exception error) { if (!disposed) ShowError(error); }
+        finally { EndOperation(); }
+    }
+
+    private async Task Apply()
+    {
+        if (!IsAllowed || !CanApply || Applied || Busy || jobId is null) return;
+        BeginOperation();
+        try
+        {
+            if (AdminMode)
+            {
+                var result = await Persistence.ChangeCatalogAsync(new() { Kind="ocr-import", CourseId=CourseId, Rows=rows });
+                message = $"Создано пользователей: {result.Created}. Добавлено зачислений: {result.Enrolled}.";
+            }
+            else
+            {
+                var ids = rows.Where(row => row.Include).Select(row => row.StudentId).ToArray();
+                if (ids.Distinct().Count() != ids.Length)
+                    throw new InvalidOperationException("Один студент выбран несколько раз. Исключите повторные строки.");
+                if (rows.Any(row => string.IsNullOrEmpty(row.DecisionId)))
+                    throw new InvalidOperationException("Сервис не вернул данные проверки. Повторите распознавание.");
+                if (Lesson?.IsCompleted != false)
+                    throw new InvalidOperationException("Журнал завершён или занятие удалено.");
+                await OcrClient.ConfirmAsync(jobId, rows, operation!.Token);
+                operation.Token.ThrowIfCancellationRequested();
+                var count = Attendance.ApplyRecognizedPresent(Username, LessonId!, ids, replaceExisting);
+                message = $"Изменено отметок: {count}. Остальные сохранены. Изменения журнала ещё не сохранены.";
+            }
+            Applied = true;
+            await OnApplied.InvokeAsync();
+        }
+        catch (OperationCanceledException) { if (!disposed) message = "Применение отменено. Данные LMS не изменены."; }
+        catch (Exception error) { if (!disposed) ShowError(error); }
+        finally { EndOperation(); }
+    }
+
+    private void BeginOperation()
+    {
+        Busy = true; message = null; isError = false;
+        operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        operation.CancelAfter(TimeSpan.FromMinutes(5));
+    }
+    private void EndOperation() { Busy = false; operation?.Dispose(); operation = null; }
+    private void Cancel() => operation?.Cancel();
+    private void ShowError(Exception error)
+    {
+        isError = true;
+        message = error is HttpRequestException ? "Нет связи с OCR-сервисом. Проверьте его запуск, адрес и CORS." : error.Message;
+    }
+    public void Dispose() { disposed = true; lifetime.Cancel(); lifetime.Dispose(); }
+}

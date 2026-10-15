@@ -1740,6 +1740,18 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .attendance-personal-card,
+    .attendance-selected-student {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        overflow-wrap: anywhere;
+    }
+
+    .attendance-personal-card .attendance-status-badge,
+    .attendance-personal-card .attendance-row-state {
+        justify-self: start;
+    }
+
     .attendance-actions-row .attendance-row-state {
         margin-right: 0;
     }

@@ -350,6 +350,7 @@ else
         string.IsNullOrWhiteSpace(CurrentStudentId)
             ? Array.Empty<AttendanceHistoryItemModel>()
             : AttendanceService.GetStudentHistory(CurrentStudentId)
+                .Where(item => !item.Lesson.IsCancelled)
                 .Where(item => UserLessons.Any(lesson => lesson.Id == item.Lesson.Id))
                 .ToList();
 

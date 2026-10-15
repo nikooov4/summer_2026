@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../omelea-dev-lms/LMSDashboardBlazor_context_roles_dynamic_generate/Models/LmsAccessModels.cs" Link="LmsAccessModels.cs" />
+    <Compile Include="../../omelea-dev-lms/LMSDashboardBlazor_context_roles_dynamic_generate/Models/Attendance/*.cs" Link="Models/%(Filename)%(Extension)" />
+    <Compile Include="../../omelea-dev-lms/LMSDashboardBlazor_context_roles_dynamic_generate/Services/Admin/LmsCatalogService.cs" Link="LmsCatalogService.cs" />
+    <Compile Include="../../omelea-dev-lms/LMSDashboardBlazor_context_roles_dynamic_generate/Services/Attendance/AttendanceService.cs" Link="AttendanceService.cs" />
+  </ItemGroup>
+</Project>

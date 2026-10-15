@@ -115,6 +115,7 @@
 }
 
 @code {
+    [Inject] private PersistentLmsService Persistence { get; set; } = default!;
     private int studentCount = 5;
     private int sectionCount = 2;
     private string subjectName = "Экзамен";
@@ -175,7 +176,7 @@
         student.ECTS = grade.ECTS;
     }
 
-    private void SaveStatement()
+    private async Task SaveStatement()
     {
         var statement = new StatementModel
         {
@@ -194,8 +195,12 @@
             }).ToList()
         };
 
-        StatementService.SetStatement(statement);
-        saveMessage = "Ведомость успешно сохранена.";
+        try
+        {
+            await Persistence.SaveStatementAsync(statement);
+            saveMessage = "Ведомость сохранена в базе данных.";
+        }
+        catch (Exception error) { saveMessage = error.Message; }
     }
 
     private static int ParseScore(string? value)

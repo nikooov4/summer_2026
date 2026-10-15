@@ -11,7 +11,7 @@
     width: 100%;
     max-width: 560px;
     background: #ffffff;
-    border-radius: 28px;
+    border-radius: 8px;
     padding: 56px 44px;
     box-shadow: 0 24px 60px rgba(31, 45, 61, 0.14);
     text-align: center;
@@ -34,7 +34,7 @@
 
 .auth-window h1 {
     margin: 0 0 14px;
-    font-size: 38px;
+    font-size: 30px;
     line-height: 1.15;
     color: #213a59;
     font-weight: 800;
@@ -55,7 +55,7 @@
     gap: 12px;
     padding: 16px 24px;
     border: none;
-    border-radius: 16px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
     font-size: 18px;
@@ -76,6 +76,9 @@
     line-height: 1.7;
     color: #7c8795;
 }
+
+.auth-form { display: grid; gap: 20px; text-align: left; }
+.auth-error { color: #a21b2d; margin: 0; overflow-wrap: anywhere; }
 
 .demo-login-grid {
     display: grid;
@@ -104,7 +107,7 @@
 @media (max-width: 640px) {
     .auth-window {
         padding: 40px 24px;
-        border-radius: 22px;
+        border-radius: 8px;
     }
 
     .auth-window h1 {

@@ -1,0 +1,32 @@
+.ocr-panel { border-top: 1px solid #dce2e7; border-bottom: 1px solid #dce2e7; margin: 14px 0; background: #fafbfc; }
+.ocr-panel > summary { padding: 14px; cursor: pointer; font-weight: 600; color: #253b48; }
+.ocr-panel > summary i { margin-right: 8px; }
+.ocr-content { padding: 0 14px 14px; }
+.ocr-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.ocr-controls .statement-field { min-width: 0; flex: 1 1 220px; }
+.ocr-controls ::deep input[type=file] { max-width: 100%; padding: 8px 0; font: inherit; font-size: 14px; }
+.ocr-controls button { min-height: 40px; }
+.ocr-preview { margin: 12px 0; overflow-wrap: anywhere; }
+.ocr-preview summary { cursor: pointer; color: #455e6c; }
+.ocr-preview img { display: block; max-width: 100%; max-height: 320px; object-fit: contain; margin-top: 8px; }
+.ocr-table { margin-top: 12px; min-width: 600px; }
+.ocr-table td { vertical-align: top; }
+.ocr-table .statement-input { min-width: 190px; width: 100%; }
+.ocr-confidence { display: block; color: #647480; font-size: 12px; margin-top: 4px; }
+.ocr-new-user { display: grid; gap: 6px; }
+.ocr-apply-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; font-size: 14px; }
+.ocr-apply-row label { display: flex; align-items: center; gap: 6px; }
+.statement-notice { margin-top: 12px; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+    .ocr-content { padding: 0 8px 12px; }
+    .ocr-controls button, .ocr-apply-row button { width: 100%; white-space: normal; }
+    .ocr-table { min-width: 0; }
+    .ocr-table thead { display: none; }
+    .ocr-table tbody, .ocr-table tr { display: block; }
+    .ocr-table tr { display: grid; grid-template-columns: 24px minmax(0, 1fr); padding: 10px 0; border-bottom: 1px solid #dce2e7; }
+    .ocr-table td { padding: 6px 4px; border: 0; min-width: 0; }
+    .ocr-table td:nth-child(n+3) { grid-column: 2; }
+    .ocr-table td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: #647480; margin-bottom: 4px; }
+    .ocr-table .statement-input { min-width: 0; }
+    .ocr-table strong { overflow-wrap: anywhere; }
+}

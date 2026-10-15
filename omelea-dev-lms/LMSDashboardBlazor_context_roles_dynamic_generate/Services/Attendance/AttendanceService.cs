@@ -8,6 +8,7 @@ public sealed class AttendanceService
 {
     private readonly LmsCatalogService catalogService;
     private readonly Dictionary<string, List<AttendanceEntryModel>> confirmedEntries = new();
+    private bool persistentMode;
 
     public AttendanceDataModel Data { get; private set; }
     public string? SelectedLessonId { get; private set; }
@@ -29,6 +30,26 @@ public sealed class AttendanceService
         Data.Lessons.FirstOrDefault(lesson => lesson.Id == SelectedLessonId) ??
         Data.Lessons.OrderByDescending(lesson => lesson.StartsAt).FirstOrDefault();
 
+    public void Load(AttendanceDataModel data)
+    {
+        persistentMode = true;
+        Data = data;
+        if (Data.Lessons.All(lesson => lesson.Id != SelectedLessonId))
+            SelectedLessonId = Data.Lessons.OrderByDescending(lesson => lesson.StartsAt).FirstOrDefault()?.Id;
+        confirmedEntries.Clear();
+        CaptureConfirmedState();
+        Changed?.Invoke();
+    }
+
+    public void AcceptSavedLesson(AttendanceLessonModel saved)
+    {
+        var index = Data.Lessons.FindIndex(lesson => lesson.Id == saved.Id);
+        if (index < 0) throw new InvalidOperationException("Занятие не найдено.");
+        Data.Lessons[index] = saved;
+        confirmedEntries[saved.Id] = saved.Entries.Select(entry => entry.Clone()).ToList();
+        Changed?.Invoke();
+    }
+
     public void SelectLesson(string lessonId)
     {
         if (Data.Lessons.Any(lesson => lesson.Id == lessonId))
@@ -40,18 +61,23 @@ public sealed class AttendanceService
 
     public IReadOnlyList<AttendanceLessonModel> GetVisibleLessons(string? username)
     {
+        var user = catalogService.GetUserByUsername(username);
+        if (user is null) return Array.Empty<AttendanceLessonModel>();
+
         var allowedCourseIds = catalogService.GetCoursesForUser(username)
             .Select(course => course.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return Data.Lessons
-            .Where(lesson => allowedCourseIds.Contains(lesson.CourseId))
+            .Where(lesson => allowedCourseIds.Contains(lesson.CourseId) ||
+                (persistentMode && lesson.Entries.Any(entry => entry.StudentId == user.Id)))
             .OrderByDescending(lesson => lesson.StartsAt)
             .ToList();
     }
 
     public bool CanEditLesson(string? username, AttendanceLessonModel lesson)
     {
+        if (lesson.IsCancelled) return false;
         var role = catalogService.GetCourseRole(username, lesson.CourseId);
         return role is LmsCourseRole.Admin or LmsCourseRole.Teacher or LmsCourseRole.Assistant;
     }
@@ -59,7 +85,10 @@ public sealed class AttendanceService
     public AttendanceStudentModel? GetCurrentStudent(string? username)
     {
         var user = catalogService.GetUserByUsername(username);
-        return user is null ? null : Data.Students.FirstOrDefault(student => student.Id == user.Id);
+        if (user is null) return null;
+        return SelectedLesson?.Roster.FirstOrDefault(student => student.Id == user.Id)
+            ?? Data.Students.FirstOrDefault(student => student.Id == user.Id)
+            ?? Data.Lessons.SelectMany(lesson => lesson.Roster).FirstOrDefault(student => student.Id == user.Id);
     }
 
     public IReadOnlyList<AttendanceStudentModel> GetStudentsForLesson(AttendanceLessonModel lesson)
@@ -68,7 +97,8 @@ public sealed class AttendanceService
             .Select(entry => entry.StudentId)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        return Data.Students
+        var students = lesson.Roster.Count > 0 ? lesson.Roster : Data.Students;
+        return students
             .Where(student => studentIds.Contains(student.Id))
             .OrderBy(student => student.FullName)
             .ToList();
@@ -118,7 +148,7 @@ public sealed class AttendanceService
     public IReadOnlyList<AttendanceLessonMonitoringModel> GetLessonMonitoring(DateTime? periodStart)
     {
         return Data.Lessons
-            .Where(lesson => lesson.StartsAt <= DateTime.Now)
+            .Where(lesson => !lesson.IsCancelled && lesson.StartsAt <= DateTime.Now)
             .Where(lesson => periodStart is null || lesson.StartsAt >= periodStart)
             .OrderByDescending(lesson => lesson.StartsAt)
             .Select(lesson => new AttendanceLessonMonitoringModel(
@@ -217,8 +247,9 @@ public sealed class AttendanceService
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var currentStudent = GetCurrentStudent(username);
-        var currentRoleIsOnlyStudent = currentStudent is not null &&
-            lessons.All(lesson => !CanEditLesson(username, lesson));
+        var currentRoleIsOnlyStudent = currentStudent is not null && !catalogService.IsAdmin(username) &&
+            lessons.All(lesson => catalogService.GetCourseRole(username, lesson.CourseId) is not
+                (LmsCourseRole.Admin or LmsCourseRole.Teacher or LmsCourseRole.Assistant or LmsCourseRole.Curator));
 
         if (currentRoleIsOnlyStudent)
         {
@@ -226,7 +257,10 @@ public sealed class AttendanceService
             studentIds.Add(currentStudent!.Id);
         }
 
-        return Data.Students
+        return lessons.SelectMany(GetStudentsForLesson)
+            .Concat(Data.Students)
+            .Concat(currentStudent is null ? Array.Empty<AttendanceStudentModel>() : new[] { currentStudent })
+            .DistinctBy(student => student.Id)
             .Where(student => studentIds.Contains(student.Id))
             .Select(student =>
             {
@@ -251,6 +285,7 @@ public sealed class AttendanceService
 
     public void UpdateStatus(AttendanceEntryModel entry, AttendanceStatus status)
     {
+        EnsureEntryEditable(entry);
         entry.Status = status;
 
         if (status != AttendanceStatus.Late)
@@ -263,24 +298,28 @@ public sealed class AttendanceService
 
     public void UpdateLateMinutes(AttendanceEntryModel entry, string? value)
     {
+        EnsureEntryEditable(entry);
         entry.LateMinutes = int.TryParse(value, out var minutes) ? Math.Max(0, minutes) : null;
         Changed?.Invoke();
     }
 
     public void UpdateComment(AttendanceEntryModel entry, string? value)
     {
+        EnsureEntryEditable(entry);
         entry.Comment = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         Changed?.Invoke();
     }
 
     public int MarkUnmarkedPresent(IEnumerable<AttendanceRowModel> rows)
     {
+        var entries = rows.Where(row => row.Entry.Status == AttendanceStatus.Unmarked).Select(row => row.Entry).ToList();
+        foreach (var entry in entries) EnsureEntryEditable(entry);
         var changed = 0;
 
-        foreach (var row in rows.Where(row => row.Entry.Status == AttendanceStatus.Unmarked))
+        foreach (var entry in entries)
         {
-            row.Entry.Status = AttendanceStatus.Present;
-            row.Entry.LateMinutes = null;
+            entry.Status = AttendanceStatus.Present;
+            entry.LateMinutes = null;
             changed++;
         }
 
@@ -289,6 +328,33 @@ public sealed class AttendanceService
             Changed?.Invoke();
         }
 
+        return changed;
+    }
+
+    public int ApplyRecognizedPresent(string? username, string lessonId, IEnumerable<string> studentIds, bool replaceExisting)
+    {
+        var lesson = Data.Lessons.FirstOrDefault(item => item.Id == lessonId)
+            ?? throw new InvalidOperationException("Занятие не найдено.");
+        if (!CanEditLesson(username, lesson))
+            throw new InvalidOperationException("Нет прав на заполнение этого журнала.");
+        if (lesson.IsCompleted)
+            throw new InvalidOperationException("Журнал завершён. Сначала возобновите его.");
+        var ids = studentIds.ToList();
+        if (ids.Count == 0 || ids.Distinct().Count() != ids.Count)
+            throw new InvalidOperationException("Выберите студентов без повторов.");
+        var allowedIds = lesson.Entries.Select(entry => entry.StudentId).ToHashSet(StringComparer.Ordinal);
+        if (ids.Any(id => !allowedIds.Contains(id)))
+            throw new InvalidOperationException("Студент отсутствует в составе этого занятия. Проверьте распознанный список заново.");
+        var changed = 0;
+        foreach (var entry in lesson.Entries.Where(entry => ids.Contains(entry.StudentId)))
+        {
+            if (entry.Status == AttendanceStatus.Present || (!replaceExisting && entry.Status != AttendanceStatus.Unmarked)) continue;
+            entry.Status = AttendanceStatus.Present;
+            entry.LateMinutes = null;
+            entry.DataSourceName = "attendance-ocr-service";
+            changed++;
+        }
+        if (changed > 0) Changed?.Invoke();
         return changed;
     }
 
@@ -305,6 +371,7 @@ public sealed class AttendanceService
     public void SaveSelectedLesson()
     {
         var lesson = SelectedLesson ?? throw new InvalidOperationException("Занятие не выбрано.");
+        EnsureLessonEditable(lesson);
         var validationErrors = lesson.Entries
             .Select(entry => ValidateEntry(entry))
             .Where(error => error is not null)
@@ -343,6 +410,8 @@ public sealed class AttendanceService
         var lesson = Data.Lessons.FirstOrDefault(item => item.Id == lessonId) ??
             throw new InvalidOperationException("Занятие не найдено.");
 
+        EnsureLessonEditable(lesson);
+
         if (HasUnsavedChanges(lesson))
         {
             throw new InvalidOperationException("Сначала сохраните изменения в журнале.");
@@ -369,6 +438,7 @@ public sealed class AttendanceService
         var lesson = Data.Lessons.FirstOrDefault(item => item.Id == lessonId) ??
             throw new InvalidOperationException("Занятие не найдено.");
 
+        if (lesson.IsCancelled) throw new InvalidOperationException("Занятие отменено.");
         lesson.CompletedAt = null;
         Changed?.Invoke();
     }
@@ -390,6 +460,7 @@ public sealed class AttendanceService
     public AttendanceSummaryModel GetStudentSummary(string studentId)
     {
         var entries = Data.Lessons
+            .Where(lesson => !lesson.IsCancelled)
             .SelectMany(lesson => lesson.Entries)
             .Where(entry => entry.StudentId == studentId)
             .ToList();
@@ -405,6 +476,7 @@ public sealed class AttendanceService
 
     public void ResetSample()
     {
+        if (persistentMode) throw new InvalidOperationException("Загруженные журналы нельзя заменить демонстрационными данными.");
         Data = CreateSampleData(catalogService);
         SyncFromCatalog();
         SelectedLessonId = Data.Lessons.OrderByDescending(lesson => lesson.StartsAt).First().Id;
@@ -438,6 +510,10 @@ public sealed class AttendanceService
 
     public static string? ValidateEntry(AttendanceEntryModel entry)
     {
+        if (!Enum.IsDefined(entry.Status)) return "Неизвестный статус посещения.";
+        if (entry.Status != AttendanceStatus.Late && entry.LateMinutes is not null)
+            return "Минуты опоздания допустимы только для статуса опоздания.";
+        if (entry.Comment?.Length > 2000) return "Комментарий не должен превышать 2000 символов.";
         if (entry.Status == AttendanceStatus.Late &&
             (entry.LateMinutes is null || entry.LateMinutes <= 0))
         {
@@ -455,6 +531,9 @@ public sealed class AttendanceService
 
     private void SyncFromCatalog()
     {
+        // Persisted lessons own their roster snapshots; catalog notifications must not rewrite them.
+        if (persistentMode) return;
+
         var enrolledStudentIds = catalogService.Enrollments
             .Where(enrollment => enrollment.Role == LmsCourseRole.Student)
             .Select(enrollment => enrollment.UserId)
@@ -555,6 +634,19 @@ public sealed class AttendanceService
         {
             confirmedEntries[lesson.Id] = lesson.Entries.Select(entry => entry.Clone()).ToList();
         }
+    }
+
+    private static void EnsureLessonEditable(AttendanceLessonModel lesson)
+    {
+        if (lesson.IsCancelled) throw new InvalidOperationException("Занятие отменено.");
+        if (lesson.IsCompleted) throw new InvalidOperationException("Журнал завершён. Сначала возобновите его.");
+    }
+
+    private void EnsureEntryEditable(AttendanceEntryModel entry)
+    {
+        var lesson = Data.Lessons.FirstOrDefault(item => item.Entries.Contains(entry))
+            ?? throw new InvalidOperationException("Запись не найдена в журнале.");
+        EnsureLessonEditable(lesson);
     }
 
     private bool IsEntryDirty(AttendanceLessonModel lesson, AttendanceEntryModel entry)

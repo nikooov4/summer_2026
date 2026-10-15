@@ -1,0 +1,340 @@
+@implements IDisposable
+@inject AuthSessionService AuthSession
+@inject PersistentLmsService Persistence
+@inject LmsCatalogService Catalog
+@inject AttendanceService Attendance
+@inject IJSRuntime JS
+
+@if (CanManageLessons || SelectedLesson is not null)
+{
+    <section class="lesson-manager" aria-label="Управление занятиями" aria-busy="@busy">
+        @if (CanManageLessons)
+        {
+            <div class="lesson-manager-toolbar">
+                <h2>Занятия</h2>
+                <button type="button" class="statement-primary-button" disabled="@(Blocked || EditableCourses.Count == 0)" @onclick="StartCreate">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Создать занятие
+                </button>
+                @if (CanManageSelected)
+                {
+                    <button type="button" class="statement-secondary-button" disabled="@(Blocked || !SelectedIsOpen)" @onclick="StartEdit">
+                        <i class="fas fa-pen" aria-hidden="true"></i> Изменить занятие
+                    </button>
+                    <button type="button" class="statement-secondary-button" disabled="@(Blocked || !SelectedIsOpen)" @onclick="CancelLessonAsync">
+                        <i class="fas fa-calendar-xmark" aria-hidden="true"></i> Отменить занятие
+                    </button>
+                }
+            </div>
+            @if (HasJournalDraft)
+            {
+                <p class="attendance-notice" role="status">Сначала сохраните или отмените изменения в журнале.</p>
+            }
+            @if (EditableCourses.Count == 0)
+            {
+                <p class="attendance-notice" role="status">Нет доступных курсов для создания занятия.</p>
+            }
+            @if (formOpen)
+            {
+                <form class="lesson-manager-form" @onsubmit="SaveLessonAsync" @onsubmit:preventDefault>
+                    <h3>@(editingId is null ? "Новое занятие" : $"Изменение занятия: {editingTopic}")</h3>
+                    <fieldset disabled="@Blocked">
+                        <div class="lesson-manager-fields">
+                            <label class="statement-field">
+                                <span>Курс</span>
+                                <select class="statement-input" aria-label="Курс" value="@courseId" @onchange="ChangeCourse" disabled="@(editingId is not null)" required>
+                                    @foreach (var course in EditableCourses)
+                                    {
+                                        <option value="@course.Id">@course.Code · @course.Name</option>
+                                    }
+                                </select>
+                            </label>
+                            <label class="statement-field">
+                                <span>Тема</span>
+                                <input class="statement-input" @bind="topic" maxlength="300" required />
+                            </label>
+                            <label class="statement-field">
+                                <span>Аудитория</span>
+                                <input class="statement-input" @bind="room" maxlength="100" required />
+                            </label>
+                            <label class="statement-field">
+                                <span>Дата и время</span>
+                                <input class="statement-input" type="datetime-local" value="@startsAtInput" @oninput="ReadStartsAt" @onchange="ReadStartsAt" required />
+                            </label>
+                        </div>
+                        <div class="lesson-manager-actions">
+                            <button type="submit" class="statement-primary-button"><i class="fas fa-save" aria-hidden="true"></i> Сохранить занятие</button>
+                        </div>
+                    </fieldset>
+                    <div class="lesson-manager-actions">
+                        <button type="button" class="statement-secondary-button" disabled="@(busy || JournalBusy)" @onclick="ResetForm"><i class="fas fa-rotate-left" aria-hidden="true"></i> Сбросить поля</button>
+                        <button type="button" class="statement-secondary-button" disabled="@(busy || JournalBusy)" @onclick="CloseForm"><i class="fas fa-xmark" aria-hidden="true"></i> Закрыть</button>
+                    </div>
+                </form>
+            }
+        }
+
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <p class="attendance-notice @(isError ? "error" : "success")" role="@(isError ? "alert" : "status")">@message</p>
+        }
+        @if (SelectedLesson is not null)
+        {
+            <div class="lesson-history-heading">
+                <button type="button" class="statement-secondary-button" aria-expanded="@historyOpen" aria-controls="lesson-audit" @onclick="ToggleHistoryAsync">
+                    <i class="fas @(historyOpen ? "fa-chevron-down" : "fa-chevron-right")" aria-hidden="true"></i> История изменений
+                </button>
+                @if (historyOpen)
+                {
+                    <button type="button" class="statement-secondary-button" title="Обновить историю" aria-label="Обновить историю" disabled="@(historyLoading || busy || JournalBusy)" @onclick="LoadHistoryAsync"><i class="fas fa-rotate" aria-hidden="true"></i></button>
+                }
+                @if (SelectedLesson.IsCancelled)
+                {
+                    <span class="attendance-row-state error">Занятие отменено</span>
+                }
+            </div>
+            @if (historyOpen)
+            {
+                <div id="lesson-audit" class="lesson-history" aria-busy="@historyLoading">
+                    @if (historyLoading)
+                    {
+                        <p role="status">Загрузка истории...</p>
+                    }
+                    else if (historyError is not null)
+                    {
+                        <p class="attendance-notice error" role="alert">@historyError</p>
+                    }
+                    else if (history.Count == 0)
+                    {
+                        <p>Изменений отметок пока нет.</p>
+                    }
+                    else
+                    {
+                        <div class="statement-table-wrap">
+                            <table class="statement-table lesson-audit-table">
+                                <caption>@SelectedLesson.Topic · @SelectedLesson.StartsAt.ToString("dd.MM.yyyy, HH:mm")</caption>
+                                <thead><tr><th>Дата</th><th>Студент</th><th>Автор</th><th>Было</th><th>Стало</th><th>Источник</th></tr></thead>
+                                <tbody>
+                                    @foreach (var item in history)
+                                    {
+                                        <tr @key="item.Id">
+                                            <td>@item.ChangedAt.ToString("dd.MM.yyyy HH:mm:ss") UTC</td>
+                                            <td><strong>@item.StudentName</strong><small>@item.RecordBookNumber</small></td>
+                                            <td>@item.ActorName</td>
+                                            <td>@AuditStatus(item.OldStatus, item.OldLateMinutes)<small>@item.OldComment</small></td>
+                                            <td>@AuditStatus(item.NewStatus, item.NewLateMinutes)<small>@item.NewComment</small></td>
+                                            <td>@(item.DataSourceName == "attendance-ocr-service" ? "Распознавание" : item.DataSourceName ?? "Журнал")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public string? Username { get; set; }
+    [Parameter] public bool JournalBusy { get; set; }
+    [Parameter] public EventCallback<bool> OnBusyChanged { get; set; }
+    [Parameter] public EventCallback OnLessonChanged { get; set; }
+
+    private readonly CancellationTokenSource lifetime = new();
+    private bool disposed;
+    private bool busy;
+    private bool formOpen;
+    private string? editingId;
+    private string editingTopic = string.Empty;
+    private long editingRevision;
+    private string courseId = string.Empty;
+    private string topic = string.Empty;
+    private string room = string.Empty;
+    private DateTime startsAt = DateTime.Today.AddHours(10);
+    private string startsAtInput = "";
+    private string? message;
+    private bool isError;
+    private bool historyOpen;
+    private bool historyLoading;
+    private int historyRequest;
+    private string? historyError;
+    private string? historyLessonId;
+    private long historyRevision = -1;
+    private List<AttendanceAuditItem> history = new();
+
+    private AttendanceLessonModel? SelectedLesson => Attendance.SelectedLesson;
+    private IReadOnlyList<LmsCourseModel> EditableCourses => Catalog.GetCoursesForUser(Username)
+        .Where(course => Catalog.GetCourseRole(Username, course.Id) is LmsCourseRole.Admin or LmsCourseRole.Teacher or LmsCourseRole.Assistant).ToList();
+    private bool CanManageLessons => Catalog.IsAdmin(Username) || EditableCourses.Count > 0;
+    private bool CanManageSelected => SelectedLesson is not null && EditableCourses.Any(course => course.Id == SelectedLesson.CourseId);
+    private bool SelectedIsOpen => SelectedLesson is { IsCompleted: false, IsCancelled: false };
+    private bool HasJournalDraft => Attendance.Data.Lessons.Any(Attendance.HasUnsavedChanges);
+    private bool Blocked => busy || JournalBusy || HasJournalDraft || !Persistence.IsConnected;
+
+    protected override void OnParametersSet()
+    {
+        if (historyLessonId == SelectedLesson?.Id && historyRevision == SelectedLesson?.Revision) return;
+        historyLessonId = SelectedLesson?.Id;
+        historyRevision = SelectedLesson?.Revision ?? -1;
+        historyOpen = false;
+        historyLoading = false;
+        historyRequest++;
+        history.Clear();
+        historyError = null;
+    }
+
+    private void StartCreate()
+    {
+        if (Blocked || !CanManageLessons || EditableCourses.Count == 0) return;
+        editingId = null;
+        editingRevision = 0;
+        courseId = EditableCourses.First().Id;
+        ResetForm();
+        formOpen = true;
+    }
+
+    private void StartEdit()
+    {
+        if (Blocked || !CanManageSelected || !SelectedIsOpen) return;
+        editingId = SelectedLesson!.Id;
+        ResetForm();
+        formOpen = true;
+    }
+
+    private void ResetForm()
+    {
+        if (busy || JournalBusy) return;
+        message = null;
+        if (editingId is not null)
+        {
+            var lesson = Attendance.Data.Lessons.FirstOrDefault(item => item.Id == editingId);
+            if (lesson is null) { CloseForm(); return; }
+            courseId = lesson.CourseId;
+            topic = lesson.Topic;
+            editingTopic = lesson.Topic;
+            room = lesson.Room;
+            startsAt = lesson.StartsAt;
+            editingRevision = lesson.Revision;
+        }
+        else
+        {
+            if (EditableCourses.All(course => course.Id != courseId)) courseId = EditableCourses.FirstOrDefault()?.Id ?? string.Empty;
+            topic = string.Empty;
+            room = Catalog.GetCourse(courseId)?.DefaultRoom ?? string.Empty;
+            startsAt = DateTime.Today.AddHours(10);
+            editingRevision = 0;
+        }
+        startsAtInput = startsAt.ToString("yyyy-MM-ddTHH:mm", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private void ReadStartsAt(ChangeEventArgs args) => startsAtInput = args.Value?.ToString() ?? "";
+
+    private void CloseForm() { formOpen = false; editingId = null; }
+
+    private void ChangeCourse(ChangeEventArgs args)
+    {
+        if (editingId is not null || Blocked) return;
+        courseId = args.Value?.ToString() ?? string.Empty;
+        room = Catalog.GetCourse(courseId)?.DefaultRoom ?? string.Empty;
+    }
+
+    private async Task SaveLessonAsync()
+    {
+        if (Blocked || !CanManageLessons) return;
+        if (!DateTime.TryParse(startsAtInput, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out startsAt))
+        {
+            isError = true; message = "Укажите дату и время занятия."; return;
+        }
+        if (!EditableCourses.Any(course => course.Id == courseId) || string.IsNullOrWhiteSpace(topic) ||
+            topic.Trim().Length > 300 || string.IsNullOrWhiteSpace(room) || room.Trim().Length > 100 || startsAt == default)
+        {
+            isError = true;
+            message = "Проверьте курс, тему, аудиторию и дату занятия.";
+            return;
+        }
+        var id = editingId;
+        var request = new LessonEditRequest(courseId, topic.Trim(), room.Trim(), DateTime.SpecifyKind(startsAt, DateTimeKind.Unspecified), editingRevision);
+        await MutateAsync(id is null ? HttpMethod.Post : HttpMethod.Put,
+            id is null ? "api/attendance/lessons" : $"api/attendance/lessons/{Uri.EscapeDataString(id)}", request,
+            id is null ? "Занятие создано." : "Занятие изменено.");
+    }
+
+    private async Task CancelLessonAsync()
+    {
+        if (Blocked || !CanManageSelected || !SelectedIsOpen) return;
+        var lesson = SelectedLesson!;
+        var request = new JournalRevisionRequest(lesson.Revision);
+        await MutateAsync(HttpMethod.Post, $"api/attendance/lessons/{Uri.EscapeDataString(lesson.Id)}/cancel", request,
+            "Занятие отменено.", $"Отменить занятие «{lesson.Topic}» ({lesson.StartsAt:dd.MM.yyyy HH:mm})?");
+    }
+
+    private async Task MutateAsync(HttpMethod method, string path, object request, string success, string? confirmation = null)
+    {
+        if (Blocked) return;
+        busy = true;
+        message = null;
+        var committed = false;
+        try
+        {
+            await OnBusyChanged.InvokeAsync(true);
+            if (confirmation is not null && !await JS.InvokeAsync<bool>("confirm", lifetime.Token, confirmation)) return;
+            if (HasJournalDraft) throw new InvalidOperationException("Сначала сохраните или отмените изменения в журнале.");
+            using var response = await AuthSession.SendAsync(method, path, request, lifetime.Token);
+            await AuthSessionService.EnsureSuccess(response);
+            var saved = await response.Content.ReadFromJsonAsync<AttendanceLessonModel>(cancellationToken: lifetime.Token)
+                ?? throw new InvalidOperationException("Пустой ответ сервера LMS.");
+            // The mutation is committed even if the following snapshot reload fails.
+            committed = true;
+            CloseForm();
+            await Persistence.LoadAsync();
+            Attendance.SelectLesson(saved.Id);
+            await OnLessonChanged.InvokeAsync();
+            isError = false;
+            message = success;
+        }
+        catch (OperationCanceledException) when (disposed) { }
+        catch (Exception error)
+        {
+            isError = true;
+            message = committed ? $"{success} Не удалось обновить данные: {error.Message} Обновите страницу." : error.Message;
+        }
+        finally
+        {
+            busy = false;
+            if (!disposed) await OnBusyChanged.InvokeAsync(false);
+        }
+    }
+
+    private async Task ToggleHistoryAsync()
+    {
+        historyOpen = !historyOpen;
+        if (historyOpen) await LoadHistoryAsync();
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        var lesson = SelectedLesson;
+        if (lesson is null || historyLoading) return;
+        var request = ++historyRequest;
+        historyLoading = true;
+        historyError = null;
+        try
+        {
+            using var response = await AuthSession.SendAsync(HttpMethod.Get,
+                $"api/attendance/lessons/{Uri.EscapeDataString(lesson.Id)}/history", cancellation: lifetime.Token);
+            await AuthSessionService.EnsureSuccess(response);
+            var items = await response.Content.ReadFromJsonAsync<List<AttendanceAuditItem>>(cancellationToken: lifetime.Token)
+                ?? throw new InvalidOperationException("Пустой ответ истории.");
+            if (request == historyRequest) history = items;
+        }
+        catch (OperationCanceledException) when (disposed) { }
+        catch (Exception error) { if (request == historyRequest) historyError = error.Message; }
+        finally { if (request == historyRequest) historyLoading = false; }
+    }
+
+    private static string AuditStatus(AttendanceStatus? status, int? minutes) => status is null ? "Нет отметки" :
+        AttendanceService.GetStatusLabel(status.Value) + (status == AttendanceStatus.Late && minutes is not null ? $" ({minutes} мин.)" : string.Empty);
+
+    public void Dispose() { disposed = true; lifetime.Cancel(); lifetime.Dispose(); }
+}

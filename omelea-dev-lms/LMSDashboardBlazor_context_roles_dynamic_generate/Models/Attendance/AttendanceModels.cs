@@ -32,7 +32,10 @@ public sealed class AttendanceLessonModel
     public string Room { get; set; } = string.Empty;
     public DateTime StartsAt { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public bool IsCancelled { get; set; }
+    public long Revision { get; set; }
     public List<AttendanceEntryModel> Entries { get; set; } = new();
+    public List<AttendanceStudentModel> Roster { get; set; } = new();
 
     public bool IsCompleted => CompletedAt is not null;
 }
@@ -44,6 +47,7 @@ public sealed class AttendanceEntryModel
     public int? LateMinutes { get; set; }
     public string? Comment { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public string? DataSourceName { get; set; }
 
     public AttendanceEntryModel Clone()
     {
@@ -53,7 +57,8 @@ public sealed class AttendanceEntryModel
             Status = Status,
             LateMinutes = LateMinutes,
             Comment = Comment,
-            UpdatedAt = UpdatedAt
+            UpdatedAt = UpdatedAt,
+            DataSourceName = DataSourceName
         };
     }
 }

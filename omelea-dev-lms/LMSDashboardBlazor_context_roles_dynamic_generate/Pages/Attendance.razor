@@ -1,15 +1,20 @@
 @page "/attendance"
+@implements IDisposable
 @using LMSDashboardBlazor.Models.Attendance
 @using LMSDashboardBlazor.Services.Attendance
 @inject AttendanceService AttendanceService
+@inject PersistentLmsService Persistence
 @inject LMSDashboardBlazor.Services.AuthSessionService AuthSession
 @inject NavigationManager NavigationManager
+@inject LmsCatalogService Catalog
+
+<NavigationLock ConfirmExternalNavigation="@HasAnyUnsavedChanges" OnBeforeInternalNavigation="GuardNavigation" />
 
 <section class="welcome-section statements-compact-hero">
     <div class="welcome-content statements-hero-content">
         <div>
             <p class="statements-eyebrow">Учет посещений</p>
-            <h1>@(CanEditCurrentLesson ? CurrentLesson?.Topic ?? "Журнал посещений" : "Моя посещаемость")</h1>
+            <h1>@(CanManageLessons ? CurrentLesson?.Topic ?? "Журнал посещений" : "Моя посещаемость")</h1>
             <p class="welcome-text">
                 @(CurrentLesson is null
                     ? "Выберите занятие для просмотра посещаемости."
@@ -22,7 +27,7 @@
                 <i class="fas fa-chart-line"></i>
                 Мониторинг
             </a>
-            @if (CanEditCurrentLesson)
+            @if (CanEditCurrentLesson && !Persistence.IsConnected)
             {
                 <button class="statement-secondary-button" type="button" @onclick="ResetSample">
                     <i class="fas fa-rotate-left"></i>
@@ -32,6 +37,13 @@
         </div>
     </div>
 </section>
+
+<LessonManager Username="@username" JournalBusy="@saving" OnBusyChanged="SetManagerBusy" OnLessonChanged="LessonChanged" />
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="@GetNoticeClass()" role="@(statusIsError ? "alert" : "status")">@statusMessage</div>
+}
 
 <div class="attendance-layout">
     <section class="dashboard-card attendance-side-card">
@@ -43,12 +55,16 @@
                 @foreach (var lesson in VisibleLessons)
                 {
                     var summary = AttendanceService.GetSummary(lesson);
-                    <button class="@GetLessonButtonClass(lesson)" type="button" @onclick="() => SelectLesson(lesson.Id)">
+                    <button class="@GetLessonButtonClass(lesson)" type="button" disabled="@(saving || managerBusy)" @onclick="() => SelectLesson(lesson.Id)">
                         <span>
                             <strong>@lesson.StartsAt.ToString("dd.MM")</strong>
                             @lesson.Topic
                         </span>
                         <small>@summary.Completed/@summary.Total · @GetLessonStateLabel(lesson)</small>
+                        @if (lesson.IsCancelled)
+                        {
+                            <span class="attendance-row-state error">Отменено</span>
+                        }
                     </button>
                 }
             </div>
@@ -57,9 +73,9 @@
 
     <section class="dashboard-card attendance-work-card">
         <div class="card-header attendance-card-header">
-            <h2><i class="fas fa-clipboard-user"></i> @(CanEditCurrentLesson ? "Журнал занятия" : "Личный просмотр")</h2>
+            <h2><i class="fas fa-clipboard-user"></i> @(HasJournalAccess ? "Журнал занятия" : "Личный просмотр")</h2>
             <div class="attendance-mode-switch">
-                @if (CanEditCurrentLesson)
+                @if (HasJournalAccess)
                 {
                     <button class="@GetModeButtonClass(AttendanceViewMode.Teacher)"
                             type="button"
@@ -83,7 +99,7 @@
                     <p>Занятий пока нет.</p>
                 </div>
             }
-            else if (viewMode == AttendanceViewMode.Teacher && CanEditCurrentLesson)
+            else if (viewMode == AttendanceViewMode.Teacher && HasJournalAccess)
             {
                 <div class="attendance-summary-grid">
                     <button class="@GetSummaryButtonClass(null)" type="button" @onclick="() => SetStatusFilter(null)">
@@ -107,11 +123,6 @@
                         <span>не отмечены</span>
                     </button>
                 </div>
-
-                @if (!string.IsNullOrWhiteSpace(statusMessage))
-                {
-                    <div class="@GetNoticeClass()" role="status">@statusMessage</div>
-                }
 
                 <div class="attendance-toolbar">
                     <label class="statement-field">
@@ -143,31 +154,36 @@
                     </label>
                 </div>
 
+                @if (!CurrentLesson.IsCancelled && !managerBusy && !saving)
+                {
+                    <OcrImport @key="CurrentLesson.Id" CourseId="@CurrentLesson.CourseId" LessonId="@CurrentLesson.Id" Username="@username" OnApplied="StateHasChanged" />
+                }
+
                 <div class="attendance-actions-row">
                     <span class="@GetJournalBadgeClass(CurrentLesson)">@GetLessonStateLabel(CurrentLesson)</span>
                     <button class="statement-secondary-button"
                             type="button"
-                            disabled="@(CurrentLesson.IsCompleted || !CanEditCurrentLesson)"
+                            disabled="@JournalReadOnly"
                             @onclick="MarkVisiblePresent">
                         Отметить неотмеченных
                     </button>
-                    <button class="statement-secondary-button" type="button" disabled="@(!HasUnsavedChanges)" @onclick="Revert">
+                    <button class="statement-secondary-button" type="button" disabled="@(!HasUnsavedChanges || saving || managerBusy)" @onclick="Revert">
                         Отменить
                     </button>
-                    <button class="statement-primary-button" type="button" disabled="@(!HasUnsavedChanges || CurrentLesson.IsCompleted)" @onclick="Save">
+                    <button class="statement-primary-button" type="button" disabled="@(!HasUnsavedChanges || JournalReadOnly)" @onclick="Save">
                         Сохранить @GetDirtySuffix()
                     </button>
-                    @if (CurrentLesson.IsCompleted)
+                    @if (CurrentLesson.IsCompleted && !CurrentLesson.IsCancelled)
                     {
-                        <button class="statement-secondary-button" type="button" @onclick="ReopenCurrent">
+                        <button class="statement-secondary-button" type="button" disabled="@(HasUnsavedChanges || saving || managerBusy)" @onclick="ReopenCurrent">
                             Возобновить журнал
                         </button>
                     }
-                    else
+                    else if (!CurrentLesson.IsCancelled)
                     {
                         <button class="statement-secondary-button"
                                 type="button"
-                                disabled="@(HasUnsavedChanges || CurrentSummary.Unmarked > 0)"
+                                disabled="@(JournalReadOnly || HasUnsavedChanges || CurrentSummary.Unmarked > 0)"
                                 title="@GetCompleteCurrentTitle()"
                                 @onclick="CompleteCurrent">
                             Завершить
@@ -196,7 +212,7 @@
                                     </td>
                                     <td>
                                         <select class="statement-cell-input"
-                                                disabled="@CurrentLesson.IsCompleted"
+                                                disabled="@JournalReadOnly"
                                                 value="@row.Entry.Status"
                                                 @onchange="eventArgs => ChangeEntryStatus(row.Entry, eventArgs.Value?.ToString())">
                                             @foreach (var status in Enum.GetValues<AttendanceStatus>())
@@ -210,14 +226,14 @@
                                                type="number"
                                                min="1"
                                                max="180"
-                                               disabled="@(CurrentLesson.IsCompleted || row.Entry.Status != AttendanceStatus.Late)"
+                                               disabled="@(JournalReadOnly || row.Entry.Status != AttendanceStatus.Late)"
                                                value="@row.Entry.LateMinutes"
                                                @oninput="eventArgs => UpdateLateMinutes(row.Entry, eventArgs.Value?.ToString())" />
                                     </td>
                                     <td>
                                         <input class="statement-cell-input attendance-comment"
                                                placeholder="@GetCommentPlaceholder(row.Entry.Status)"
-                                               disabled="@CurrentLesson.IsCompleted"
+                                               disabled="@JournalReadOnly"
                                                value="@row.Entry.Comment"
                                                @oninput="eventArgs => UpdateComment(row.Entry, eventArgs.Value?.ToString())" />
                                     </td>
@@ -260,7 +276,7 @@
                 <div class="attendance-student-header">
                     <label class="statement-field">
                         <span>Студент</span>
-                        <select class="statement-input" @bind="selectedStudentId" disabled="@(!CanEditCurrentLesson)">
+                        <select class="statement-input" @bind="selectedStudentId" disabled="@(!HasJournalAccess)">
                             @foreach (var student in VisibleStudentOptions)
                             {
                                 <option value="@student.Id">@student.FullName</option>
@@ -290,7 +306,11 @@
                         <h3>@CurrentLesson.Topic</h3>
                         <span>@CurrentLesson.StartsAt.ToString("dd.MM.yyyy, HH:mm") · @CurrentLesson.CourseName</span>
                     </div>
-                    @if (SelectedStudentEntry is null)
+                    @if (CurrentLesson.IsCancelled)
+                    {
+                        <span class="attendance-row-state error">Занятие отменено</span>
+                    }
+                    else if (SelectedStudentEntry is null)
                     {
                         <span class="attendance-row-state error">Нет записи</span>
                     }
@@ -321,6 +341,10 @@
                                     <td class="statement-name-cell attendance-student-cell">
                                         <strong>@item.Lesson.CourseName</strong>
                                         <small>@item.Lesson.Topic</small>
+                                        @if (item.Lesson.IsCancelled)
+                                        {
+                                            <span class="attendance-row-state error">Отменено</span>
+                                        }
                                     </td>
                                     <td>
                                         <span class="@GetStatusBadgeClass(item.Entry.Status)">
@@ -357,6 +381,8 @@
     private bool statusIsError;
     private bool isAuthenticated;
     private string? username;
+    private bool managerBusy;
+    private bool disposed;
 
     private AttendanceLessonModel? CurrentLesson => AttendanceService.SelectedLesson;
 
@@ -368,6 +394,16 @@
     private bool CanEditCurrentLesson =>
         CurrentLesson is not null && AttendanceService.CanEditLesson(username, CurrentLesson);
 
+    private bool CanManageLessons => isAuthenticated && (Catalog.IsAdmin(username) || Catalog.GetCoursesForUser(username)
+        .Any(course => Catalog.GetCourseRole(username, course.Id) is LmsCourseRole.Admin or LmsCourseRole.Teacher or LmsCourseRole.Assistant));
+
+    private bool HasJournalAccess => CurrentLesson is not null &&
+        Catalog.GetCourseRole(username, CurrentLesson.CourseId) is LmsCourseRole.Admin or LmsCourseRole.Teacher or LmsCourseRole.Assistant;
+
+    private bool JournalReadOnly => !Persistence.IsConnected || !CanEditCurrentLesson || CurrentLesson?.IsCompleted == true || saving || managerBusy;
+
+    private bool HasAnyUnsavedChanges => AttendanceService.Data.Lessons.Any(AttendanceService.HasUnsavedChanges);
+
     private IReadOnlyList<AttendanceStudentModel> VisibleStudentOptions
     {
         get
@@ -377,7 +413,7 @@
                 return Array.Empty<AttendanceStudentModel>();
             }
 
-            if (CanEditCurrentLesson)
+            if (HasJournalAccess)
             {
                 return AttendanceService.GetStudentsForLesson(CurrentLesson);
             }
@@ -413,13 +449,14 @@
     private AttendanceSummaryModel StudentSummary =>
         string.IsNullOrWhiteSpace(selectedStudentId)
             ? new AttendanceSummaryModel(0, 0, 0, 0, 0, 0)
-            : BuildSummary(StudentHistory.Select(item => item.Entry));
+            : BuildSummary(StudentHistory.Where(item => !item.Lesson.IsCancelled).Select(item => item.Entry));
 
     private AttendanceEntryModel? SelectedStudentEntry =>
         CurrentLesson?.Entries.FirstOrDefault(entry => entry.StudentId == selectedStudentId);
 
     protected override void OnInitialized()
     {
+        AttendanceService.Changed += AttendanceChanged;
         selectedStudentId = AttendanceService.Data.Students.OrderBy(student => student.FullName).FirstOrDefault()?.Id ?? string.Empty;
     }
 
@@ -444,7 +481,7 @@
 
     protected override void OnParametersSet()
     {
-        if (!string.IsNullOrWhiteSpace(RequestedLesson))
+        if (!string.IsNullOrWhiteSpace(RequestedLesson) && !HasAnyUnsavedChanges)
         {
             AttendanceService.SelectLesson(RequestedLesson);
         }
@@ -458,7 +495,7 @@
             ? AttendanceViewMode.Student
             : AttendanceViewMode.Teacher;
 
-        if (!CanEditCurrentLesson)
+        if (!HasJournalAccess)
         {
             viewMode = AttendanceViewMode.Student;
         }
@@ -466,6 +503,13 @@
 
     private void SelectLesson(string lessonId)
     {
+        if (saving || managerBusy) return;
+        if (lessonId != CurrentLesson?.Id && HasAnyUnsavedChanges)
+        {
+            statusIsError = true;
+            statusMessage = "Сначала сохраните или отмените изменения в журнале.";
+            return;
+        }
         if (VisibleLessons.All(lesson => lesson.Id != lessonId))
         {
             return;
@@ -474,13 +518,16 @@
         AttendanceService.SelectLesson(lessonId);
         searchText = string.Empty;
         statusFilter = null;
+        if (HasJournalAccess && RequestedView?.Equals("student", StringComparison.OrdinalIgnoreCase) != true)
+            viewMode = AttendanceViewMode.Teacher;
+        else if (!HasJournalAccess) viewMode = AttendanceViewMode.Student;
         EnsureStudentSelection();
         ClearStatus();
     }
 
     private void SetMode(AttendanceViewMode mode)
     {
-        if (mode == AttendanceViewMode.Teacher && !CanEditCurrentLesson)
+        if (mode == AttendanceViewMode.Teacher && !HasJournalAccess)
         {
             return;
         }
@@ -503,6 +550,7 @@
 
     private void ChangeEntryStatus(AttendanceEntryModel entry, string? value)
     {
+        if (JournalReadOnly) return;
         if (Enum.TryParse<AttendanceStatus>(value, out var status))
         {
             AttendanceService.UpdateStatus(entry, status);
@@ -513,19 +561,21 @@
 
     private void UpdateLateMinutes(AttendanceEntryModel entry, string? value)
     {
+        if (JournalReadOnly) return;
         AttendanceService.UpdateLateMinutes(entry, value);
         ClearStatus();
     }
 
     private void UpdateComment(AttendanceEntryModel entry, string? value)
     {
+        if (JournalReadOnly) return;
         AttendanceService.UpdateComment(entry, value);
         ClearStatus();
     }
 
     private void MarkVisiblePresent()
     {
-        if (CurrentLesson?.IsCompleted == true)
+        if (JournalReadOnly)
         {
             return;
         }
@@ -537,17 +587,19 @@
             : $"Присутствие установлено для {changed} студентов. Изменения пока не сохранены.";
     }
 
-    private void Save()
+    private async Task Save()
     {
-        TryRun(() =>
+        if (JournalReadOnly || !HasUnsavedChanges) return;
+        await TryRunAsync(async () =>
         {
-            AttendanceService.SaveSelectedLesson();
-            statusMessage = "Журнал сохранен в текущей сессии LMS.";
+            await Persistence.SaveJournalAsync();
+            statusMessage = "Журнал сохранён в базе данных.";
         });
     }
 
     private void Revert()
     {
+        if (saving || managerBusy) return;
         TryRun(() =>
         {
             AttendanceService.RevertSelectedLesson();
@@ -555,30 +607,30 @@
         });
     }
 
-    private void CompleteCurrent()
+    private async Task CompleteCurrent()
     {
-        if (CurrentLesson is null)
+        if (CurrentLesson is null || JournalReadOnly || HasUnsavedChanges)
         {
             return;
         }
 
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            AttendanceService.CompleteLesson(CurrentLesson.Id);
+            await Persistence.SetJournalStateAsync(CurrentLesson.Id, true);
             statusMessage = "Журнал завершен и включен в мониторинг.";
         });
     }
 
-    private void ReopenCurrent()
+    private async Task ReopenCurrent()
     {
-        if (CurrentLesson is null)
+        if (CurrentLesson is null || !Persistence.IsConnected || !CanEditCurrentLesson || !CurrentLesson.IsCompleted || HasUnsavedChanges || saving || managerBusy)
         {
             return;
         }
 
-        TryRun(() =>
+        await TryRunAsync(async () =>
         {
-            AttendanceService.ReopenLesson(CurrentLesson.Id);
+            await Persistence.SetJournalStateAsync(CurrentLesson.Id, false);
             statusMessage = "Журнал снова открыт для редактирования.";
         });
     }
@@ -609,7 +661,7 @@
             AttendanceService.SelectLesson(visibleLessons.First().Id);
         }
 
-        if (!CanEditCurrentLesson)
+        if (!HasJournalAccess)
         {
             viewMode = AttendanceViewMode.Student;
         }
@@ -650,6 +702,16 @@
         }
     }
 
+    private bool saving;
+    private async Task TryRunAsync(Func<Task> action)
+    {
+        if (saving || managerBusy) return;
+        saving = true;
+        try { statusIsError = false; await action(); }
+        catch (Exception error) { statusIsError = true; statusMessage = error.Message; }
+        finally { saving = false; }
+    }
+
     private void ClearStatus()
     {
         statusMessage = null;
@@ -663,7 +725,7 @@
 
     private string GetLessonListTitle()
     {
-        return CanEditCurrentLesson ? "Занятия" : "Мои занятия";
+        return CanManageLessons ? "Занятия" : "Мои занятия";
     }
 
     private string GetModeButtonClass(AttendanceViewMode mode)
@@ -731,6 +793,7 @@
 
     private static string GetLessonStateLabel(AttendanceLessonModel lesson)
     {
+        if (lesson.IsCancelled) return "Отменено";
         if (lesson.IsCompleted)
         {
             return "Завершен";
@@ -743,6 +806,7 @@
 
     private static string GetJournalBadgeClass(AttendanceLessonModel lesson)
     {
+        if (lesson.IsCancelled) return "attendance-row-state error";
         if (lesson.IsCompleted)
         {
             return "attendance-row-state saved";
@@ -783,6 +847,36 @@
     private static string GetStatusBadgeClass(AttendanceStatus status)
     {
         return $"attendance-status-badge status-{status.ToString().ToLowerInvariant()}";
+    }
+
+    private void GuardNavigation(LocationChangingContext context)
+    {
+        if (!HasAnyUnsavedChanges && !saving && !managerBusy) return;
+        context.PreventNavigation();
+        statusIsError = true;
+        statusMessage = saving || managerBusy ? "Дождитесь завершения сохранения." : "Сначала сохраните или отмените изменения в журнале.";
+        StateHasChanged();
+    }
+
+    private void SetManagerBusy(bool value) => managerBusy = value;
+
+    private void LessonChanged()
+    {
+        searchText = string.Empty;
+        statusFilter = null;
+        EnsureVisibleSelection();
+        ClearStatus();
+    }
+
+    private void AttendanceChanged()
+    {
+        if (!disposed) _ = InvokeAsync(() => { EnsureVisibleSelection(); StateHasChanged(); });
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        AttendanceService.Changed -= AttendanceChanged;
     }
 
     private enum AttendanceViewMode

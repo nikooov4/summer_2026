@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Models/LmsAccessModels.cs" Link="Domain/LmsAccessModels.cs" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Models/Attendance/*.cs" Link="Domain/%(Filename)%(Extension)" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Models/PersistenceModels.cs" Link="Domain/PersistenceModels.cs" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Models/AuthenticationModels.cs" Link="Domain/AuthenticationModels.cs" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Services/Admin/LmsCatalogService.cs" Link="Domain/LmsCatalogService.cs" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Services/Attendance/AttendanceService.cs" Link="Domain/AttendanceService.cs" />
+    <Compile Include="../LMSDashboardBlazor_context_roles_dynamic_generate/Services/Statements/StatementService.cs" Link="Domain/StatementService.cs" />
+    <Content Include="../../database/*.sql" Link="database/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

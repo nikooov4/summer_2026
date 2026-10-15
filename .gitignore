@@ -29,3 +29,8 @@ document_work/__pycache__/
 **/~$*
 *.tmp
 *.log
+.local/
+**/appsettings.Local.json
+**/__pycache__/
+**/.pytest_cache/
+**/pytest-cache-files-*/
